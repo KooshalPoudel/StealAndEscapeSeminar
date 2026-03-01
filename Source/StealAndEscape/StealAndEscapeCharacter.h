@@ -18,7 +18,7 @@ public:
 	virtual void Tick(float DeltaSeconds) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
-	// Getters used by PlayerController (DO NOT REMOVE)
+	// Getters used by PlayerController Which are being used 
 	FORCEINLINE class UCameraComponent* GetTopDownCameraComponent() const { return TopDownCameraComponent; }
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
 	FORCEINLINE class UDecalComponent* GetCursorToWorld() const { return CursorToWorld; }
@@ -32,10 +32,10 @@ protected:
 	void StartRun();
 	void StopRun();
 
-	// NEW: Grab (G key)
+	//Grab (G key)
 	void GrabPressed();
 
-	// NEW: Assign in BP (TopDownCharacter)
+	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Animation", meta = (AllowPrivateAccess = "true"))
 		UAnimMontage* GrabMontage = nullptr;
 

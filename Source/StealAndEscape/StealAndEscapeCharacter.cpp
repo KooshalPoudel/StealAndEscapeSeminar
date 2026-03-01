@@ -15,10 +15,10 @@
 
 AStealAndEscapeCharacter::AStealAndEscapeCharacter()
 {
-	// Set size for player capsule
+	
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
 
-	// Don't rotate character to camera direction
+	// dont change anything for this 
 	bUseControllerRotationPitch = false;
 	bUseControllerRotationYaw = false;
 	bUseControllerRotationRoll = false;
@@ -29,7 +29,7 @@ AStealAndEscapeCharacter::AStealAndEscapeCharacter()
 	GetCharacterMovement()->bConstrainToPlane = true;
 	GetCharacterMovement()->bSnapToPlaneAtStart = true;
 
-	// Set walk speed (Shift will increase this)
+	// shift for run 
 	GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
 
 	// Create camera boom
@@ -72,7 +72,7 @@ void AStealAndEscapeCharacter::SetupPlayerInputComponent(UInputComponent* Player
 	PlayerInputComponent->BindAction("Run", IE_Pressed, this, &AStealAndEscapeCharacter::StartRun);
 	PlayerInputComponent->BindAction("Run", IE_Released, this, &AStealAndEscapeCharacter::StopRun);
 
-	// NEW: G to grab
+	//G to grab
 	PlayerInputComponent->BindAction("Grab", IE_Pressed, this, &AStealAndEscapeCharacter::GrabPressed);
 }
 
@@ -112,7 +112,7 @@ void AStealAndEscapeCharacter::StopRun()
 
 void AStealAndEscapeCharacter::GrabPressed()
 {
-	// Plays your Grab montage when you press G
+	// G will play animation montage for garb 
 	if (!GrabMontage)
 	{
 		return;
@@ -129,7 +129,7 @@ void AStealAndEscapeCharacter::GrabPressed()
 		return;
 	}
 
-	// Prevent spam: don't restart if already playing
+	//don't restart if already playing
 	if (!AnimInstance->Montage_IsPlaying(GrabMontage))
 	{
 		PlayAnimMontage(GrabMontage);
