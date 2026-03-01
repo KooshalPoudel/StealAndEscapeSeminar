@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "Animation/AnimMontage.h"
 #include "StealAndEscapeCharacter.generated.h"
 
 UCLASS(Blueprintable)
@@ -23,15 +24,22 @@ public:
 	FORCEINLINE class UDecalComponent* GetCursorToWorld() const { return CursorToWorld; }
 
 protected:
-
 	// WASD movement
 	void MoveForward(float Value);
 	void MoveRight(float Value);
+
+	// Shift to run
 	void StartRun();
 	void StopRun();
 
-private:
+	// NEW: Grab (G key)
+	void GrabPressed();
 
+	// NEW: Assign in BP (TopDownCharacter)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Animation", meta = (AllowPrivateAccess = "true"))
+		UAnimMontage* GrabMontage = nullptr;
+
+private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 		class UCameraComponent* TopDownCameraComponent;
 
@@ -40,6 +48,7 @@ private:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 		class UDecalComponent* CursorToWorld;
+
 	float WalkSpeed = 350.f;
-	float RunSpeed = 1000.f;
+	float RunSpeed = 600.f;
 };

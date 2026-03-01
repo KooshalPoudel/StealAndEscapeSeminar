@@ -71,6 +71,9 @@ void AStealAndEscapeCharacter::SetupPlayerInputComponent(UInputComponent* Player
 	// Shift to run
 	PlayerInputComponent->BindAction("Run", IE_Pressed, this, &AStealAndEscapeCharacter::StartRun);
 	PlayerInputComponent->BindAction("Run", IE_Released, this, &AStealAndEscapeCharacter::StopRun);
+
+	// NEW: G to grab
+	PlayerInputComponent->BindAction("Grab", IE_Pressed, this, &AStealAndEscapeCharacter::GrabPressed);
 }
 
 void AStealAndEscapeCharacter::MoveForward(float Value)
@@ -105,6 +108,32 @@ void AStealAndEscapeCharacter::StartRun()
 void AStealAndEscapeCharacter::StopRun()
 {
 	GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
+}
+
+void AStealAndEscapeCharacter::GrabPressed()
+{
+	// Plays your Grab montage when you press G
+	if (!GrabMontage)
+	{
+		return;
+	}
+
+	if (!GetMesh())
+	{
+		return;
+	}
+
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (!AnimInstance)
+	{
+		return;
+	}
+
+	// Prevent spam: don't restart if already playing
+	if (!AnimInstance->Montage_IsPlaying(GrabMontage))
+	{
+		PlayAnimMontage(GrabMontage);
+	}
 }
 
 void AStealAndEscapeCharacter::Tick(float DeltaSeconds)
