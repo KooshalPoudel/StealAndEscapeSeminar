@@ -2,9 +2,8 @@ StealAndEscapeSeminar Unreal Engine 4.27.2 C++ Project
 
 Instructions to Open the Project
 
-1.  Clone the repository from GitHub using GitHub Desktop or by running:
+1.  Clone the repository from GitHub or Download the zipped folder.
 
-    git clone https://github.com/YOUR_USERNAME/StealAndEscapeSeminar.git
 
 2.  Install the required software:
 
