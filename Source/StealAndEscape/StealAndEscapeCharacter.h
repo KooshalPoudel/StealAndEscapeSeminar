@@ -1,4 +1,17 @@
-// Copyright Epic Games, Inc. All Rights Reserved.
+/*
+Project Name: Steal and Escape: A 3D top-down semi-escape stealth game developed in Unreal Engine
+Course: CSCI 491 Seminar
+Template Used: Unreal Engine 4 TopDown C++ Template (Epic Games)
+Original Template Author: Epic Games
+
+File Name: StealAndEscapeCharacter.h
+Modified By: Kushal Poudel and Alok Poudel 
+Last Modified: March 1, 2026
+
+This header file is based on the Unreal Engine TopDown template.
+Camera components and cursor decal are template-generated.
+WASD movement, Sprint system, and Grab animation are custom implemented.
+*/
 
 #pragma once
 
@@ -24,17 +37,16 @@ public:
 	FORCEINLINE class UDecalComponent* GetCursorToWorld() const { return CursorToWorld; }
 
 protected:
-	// WASD movement
+	// WASD movement -Alok
 	void MoveForward(float Value);
 	void MoveRight(float Value);
 
-	// Shift to run
+	// Shift to run- Alok
 	void StartRun();
 	void StopRun();
 
-	//Grab (G key)
+	//Grab (G key)  is pressed character plays Grab animation montage-- Kushal
 	void GrabPressed();
-
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Animation", meta = (AllowPrivateAccess = "true"))
 		UAnimMontage* GrabMontage = nullptr;
