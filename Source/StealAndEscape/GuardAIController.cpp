@@ -5,7 +5,7 @@ Course: CSCI 491 Seminar
 File Name: GuardAIController.cpp
 Author: Alok Poudel
 Contributor: Kushal Poudel
-Last Modified: March 16, 2026
+Last Modified: March 17, 2026
 Description: GuardAIController is responsible for controlling the enemy guard's behavior using
 Unreal Engine's AI Perception system. This class controls how the guard recognizes the player,
 interprets visual and audio cues, and reacts to visibility changes.
@@ -15,9 +15,14 @@ Updated: Implemented full patrol state machine with three states:
 - Chasing: Guard sprints toward the player when detected by sight
 - Investigating: Guard walks to a heard noise location, then returns to patrol
 Guards now return to the nearest patrol point after losing the player.
+
+Updated: Added catch logic in Chasing state. When the guard gets within CatchDistance
+of the player it stops moving and calls GameMode->OnPlayerCaught() to trigger the
+lose condition. bHasCaughtPlayer flag prevents the catch from triggering multiple times.
 */
 #include "GuardAIController.h"
 #include "GuardCharacter.h"
+#include "StealAndEscapeGameMode.h"
 #include "Perception/AIPerceptionComponent.h"
 #include "Perception/AISenseConfig_Sight.h"
 #include "Perception/AISense_Sight.h"
@@ -83,6 +88,10 @@ void AGuardAIController::OnPossess(APawn* InPawn)
    its current patrol point so we can trigger the wait timer and then move
    to the next point. We also check if the guard reached an investigation
    location so it can return to patrol.
+
+   Updated: Added Chasing state check. When chasing the player we check
+   the distance between guard and player every frame. If the distance is
+   less than CatchDistance the guard catches the player and the game ends.
 */
 void AGuardAIController::Tick(float DeltaSeconds)
 {
@@ -115,6 +124,36 @@ void AGuardAIController::Tick(float DeltaSeconds)
 					Guard->PatrolWaitTime,
 					false
 				);
+			}
+		}
+	}
+	else if (CurrentState == EGuardState::Chasing)
+	{
+		/* Catch Logic - Check if the guard is close enough to catch the player
+		   Using Dist2D to ignore Z height difference between guard and player
+		   If within CatchDistance the guard stops and tells GameMode the player was caught
+		   bHasCaughtPlayer prevents this from being called multiple times per chase
+		*/
+		if (!bHasCaughtPlayer)
+		{
+			ACharacter* PlayerChar = UGameplayStatics::GetPlayerCharacter(GetWorld(), 0);
+			if (PlayerChar)
+			{
+				float DistToPlayer = FVector::Dist2D(Guard->GetActorLocation(), PlayerChar->GetActorLocation());
+				if (DistToPlayer <= CatchDistance)
+				{
+					// Player caught! Stop guard movement and trigger lose condition
+					bHasCaughtPlayer = true;
+					StopMovement();
+
+					// Getting GameMode to call OnPlayerCaught which handles the lose condition
+					AStealAndEscapeGameMode* GM = Cast<AStealAndEscapeGameMode>(
+						UGameplayStatics::GetGameMode(GetWorld()));
+					if (GM)
+					{
+						GM->OnPlayerCaught();
+					}
+				}
 			}
 		}
 	}

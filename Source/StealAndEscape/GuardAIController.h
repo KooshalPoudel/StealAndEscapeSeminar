@@ -4,7 +4,7 @@ Course: CSCI 491 Seminar
 File Name: GuardAIController.h
 Author: Alok Poudel
 Contributors: Kushal Poudel
-Last Modified: March 16, 2026
+Last Modified: March 17, 2026
 Description: GuardAIController handles the enemy guard's AI behavior using
 Unreal Engine's AI Perception system. This class controls how the guard recognizes the player,
 interprets visual and audio cues, and reacts to visibility changes.
@@ -12,6 +12,9 @@ interprets visual and audio cues, and reacts to visibility changes.
 Updated: Added patrol state machine with three states (Patrolling, Chasing, Investigating).
 Guards now walk between patrol waypoints, chase on sight, investigate on hearing,
 and return to their nearest patrol point after losing the player.
+
+Updated: Added lose condition trigger. When the guard is in Chasing state and gets
+within CatchDistance of the player, it calls GameMode->OnPlayerCaught() to end the game.
 */
 #pragma once
 #include "CoreMinimal.h"
@@ -83,4 +86,13 @@ private:
 
 	// How close the guard needs to be to a patrol point to consider it reached (in unreal units)
 	float PatrolAcceptanceRadius = 150.f;
+
+	/* Catch System Variables */
+
+	// How close the guard needs to be to the player to catch them during chase (in unreal units)
+	// When distance between guard and player is less than this value the player is caught
+	float CatchDistance = 100.f;
+
+	// Whether the guard has already triggered a catch to prevent calling OnPlayerCaught multiple times
+	bool bHasCaughtPlayer = false;
 };
