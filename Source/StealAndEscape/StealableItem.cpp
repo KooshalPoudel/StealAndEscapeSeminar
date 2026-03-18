@@ -5,17 +5,24 @@ Course: CSCI 491 Seminar
 
 File Name: StealableItem.cpp
 Author: Kushal Poudel and Alok Poudel
-Last Modified: March 17, 2026
+Last Modified: March 18, 2026
 
 Description: Implementation of the StealableItem actor which handles collectible objects.
-When the player character enters the sphere collision the item notifies the GameMode
-to increment the collected item count and then destroys itself from the world.
-The static mesh component provides a visual representation so the player can see
-what they are picking up. The mesh can be assigned in the editor or blueprint.
+
+Updated: Changed from auto-collect to manual grab system with candidate list.
+Previously OnOverlapBegin would immediately collect the item and destroy it.
+Now OnOverlapBegin adds this item to the player character's candidate list
+and OnOverlapEnd removes it. The actual collection happens when the player
+presses G and the grab animation notify calls CollectItem() through the
+player character's CollectNearbyItem() which picks the closest candidate.
+
+CollectItem() handles the same logic as before: notifying the GameMode to increment
+the collected count and then destroying the actor. But now it only happens when the
+player intentionally grabs the item during the animation.
 
 The collision sphere uses OverlapAllDynamic profile so it generates overlap events
 without physically blocking the player. Query only collision means the player
-walks through the item and the overlap event handles the pickup logic.
+walks through the item and the overlap events track proximity.
 */
 
 #include "StealableItem.h"
@@ -33,16 +40,15 @@ AStealableItem::AStealableItem()
 {
 	PrimaryActorTick.bCanEverTick = false;
 
-	/* Creating the sphere collision component for detecting player overlap
+	/* Creating the sphere collision component for detecting player proximity
 	   InitSphereRadius sets the radius of the detection area around the item
-	   200 units is a large pickup range for testing so we can confirm overlap works
-	   Once confirmed working this can be reduced to 80 or whatever feels right
+	   200 units gives enough range for the player to be close but not too far
 
 	   Collision is set up manually instead of using a profile name to make sure
 	   it works correctly. QueryOnly means it does not physically block anything.
 	   We set all channels to Overlap so it detects the player capsule entering.
 	   GenerateOverlapEvents must be true on both this sphere and the player capsule
-	   for OnComponentBeginOverlap to fire.
+	   for OnComponentBeginOverlap and OnComponentEndOverlap to fire.
 	*/
 	CollisionSphere = CreateDefaultSubobject<USphereComponent>(TEXT("CollisionSphere"));
 	CollisionSphere->InitSphereRadius(200.f);
@@ -65,10 +71,7 @@ void AStealableItem::BeginPlay()
 {
 	Super::BeginPlay();
 
-	/* DEBUG: Confirming that the StealableItem spawned and checking collision state
-	   This message appears on screen when the game starts so we know the item exists
-	   If you do NOT see this message then the item was not placed in the level
-	*/
+	/* DEBUG: Confirming that the StealableItem spawned and checking collision state */
 	if (GEngine)
 	{
 		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Orange,
@@ -79,14 +82,13 @@ void AStealableItem::BeginPlay()
 	// Checking if CollisionSphere is valid before binding
 	if (CollisionSphere)
 	{
-		// Binding the overlap event to our custom function
-		// When the player enters the sphere collision OnOverlapBegin will be called
+		// Binding both overlap begin and end events
+		// Begin adds this item to the player's candidate list
+		// End removes this item from the player's candidate list
 		CollisionSphere->OnComponentBeginOverlap.AddDynamic(this, &AStealableItem::OnOverlapBegin);
+		CollisionSphere->OnComponentEndOverlap.AddDynamic(this, &AStealableItem::OnOverlapEnd);
 
-		/* DEBUG: Logging the collision state so we can verify it is set up correctly
-		   GenerateOverlapEvents must be true for overlaps to fire
-		   CollisionEnabled must be QueryOnly or QueryAndPhysics for overlaps to work
-		*/
+		/* DEBUG: Logging the collision state so we can verify it is set up correctly */
 		UE_LOG(LogTemp, Warning, TEXT("StealableItem %s - Overlap events enabled: %s, Collision enabled: %d, Sphere radius: %.1f"),
 			*GetName(),
 			CollisionSphere->GetGenerateOverlapEvents() ? TEXT("YES") : TEXT("NO"),
@@ -95,7 +97,6 @@ void AStealableItem::BeginPlay()
 	}
 	else
 	{
-		// If CollisionSphere is null something went wrong in the constructor
 		UE_LOG(LogTemp, Error, TEXT("StealableItem %s - CollisionSphere is NULL!"), *GetName());
 		if (GEngine)
 		{
@@ -105,66 +106,62 @@ void AStealableItem::BeginPlay()
 	}
 }
 
-/* OnOverlapBegin is called when an actor enters the sphere collision area
-   DEBUG VERSION: Every step has a debug message so we can see exactly what happens
-   and where the function stops if the item is not being collected
+/* OnOverlapBegin - Player entered the sphere collision area
+   Adds this item to the player's candidate list so it can be grabbed
+   The player must still press G to actually collect the item
 */
 void AStealableItem::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex,
 	bool bFromSweep, const FHitResult& SweepResult)
 {
-	/* DEBUG STEP 1: Something entered the sphere collision
-	   If you see this message then the overlap event IS firing
-	   If you never see this message then the overlap binding or collision setup is the problem
-	*/
-	UE_LOG(LogTemp, Warning, TEXT("StealableItem OnOverlapBegin - STEP 1: Something overlapped! Actor: %s, Class: %s"),
-		OtherActor ? *OtherActor->GetName() : TEXT("NULL"),
-		OtherActor ? *OtherActor->GetClass()->GetName() : TEXT("NULL"));
+	if (!OtherActor) return;
+
+	// Cast to player character to make sure only the player triggers this
+	AStealAndEscapeCharacter* Player = Cast<AStealAndEscapeCharacter>(OtherActor);
+	if (!Player) return;
+
+	UE_LOG(LogTemp, Warning, TEXT("StealableItem %s - Player entered grab range"), *GetName());
 
 	if (GEngine)
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Magenta,
-			FString::Printf(TEXT("STEP 1: Overlap detected by %s - Actor: %s"),
-				*GetName(),
-				OtherActor ? *OtherActor->GetName() : TEXT("NULL")));
+		GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Yellow,
+			FString::Printf(TEXT("Near item: %s (Press G to grab)"), *GetName()));
 	}
 
-	// Safety check to make sure OtherActor is valid
-	if (!OtherActor)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("StealableItem - FAILED: OtherActor is NULL"));
-		return;
-	}
+	// Add this item to the player's candidate list
+	Player->AddNearbyItem(this);
+}
 
-	/* DEBUG STEP 2: Trying to cast to player character
-	   If you see Step 1 but not Step 2 then the overlapping actor is not the player
-	   This means something else like a guard or a wall is triggering the overlap
-	   Check what actor name was printed in Step 1
-	*/
+/* OnOverlapEnd - Player left the sphere collision area
+   Removes this item from the player's candidate list so it can no longer be grabbed
+*/
+void AStealableItem::OnOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
+	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+{
+	if (!OtherActor) return;
+
 	AStealAndEscapeCharacter* Player = Cast<AStealAndEscapeCharacter>(OtherActor);
-	if (!Player)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("StealableItem - STEP 2 FAILED: Cast to AStealAndEscapeCharacter failed! Actor class: %s"),
-			*OtherActor->GetClass()->GetName());
+	if (!Player) return;
 
-		if (GEngine)
-		{
-			GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Red,
-				FString::Printf(TEXT("STEP 2 FAILED: %s is not the player (class: %s)"),
-					*OtherActor->GetName(),
-					*OtherActor->GetClass()->GetName()));
-		}
-		return;
-	}
+	UE_LOG(LogTemp, Warning, TEXT("StealableItem %s - Player left grab range"), *GetName());
 
-	/* DEBUG STEP 3: Cast succeeded - this IS the player
-	   If you see this then the player walked into the sphere and was recognized
-	*/
-	UE_LOG(LogTemp, Warning, TEXT("StealableItem - STEP 3: Player confirmed! Getting GameMode..."));
+	// Remove this item from the player's candidate list
+	Player->RemoveNearbyItem(this);
+}
+
+/* CollectItem - Called by the player character when the grab animation notify fires
+   and this item was selected as the closest candidate
+   This is the same collection logic as before but now it only triggers during the animation
+   Notifies the GameMode to increment the collected item count then destroys the actor
+*/
+void AStealableItem::CollectItem()
+{
+	UE_LOG(LogTemp, Warning, TEXT("StealableItem %s - Collected by player grab!"), *GetName());
+
 	if (GEngine)
 	{
 		GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Green,
-			TEXT("STEP 3: Player confirmed! Collecting item..."));
+			FString::Printf(TEXT("Grabbed item: %s"), *GetName()));
 	}
 
 	// Getting the GameMode to notify it that an item was collected
@@ -172,26 +169,18 @@ void AStealableItem::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor*
 		UGameplayStatics::GetGameMode(GetWorld()));
 	if (GM)
 	{
-		/* DEBUG STEP 4: GameMode found and calling OnItemCollected
-		   If you see this then everything worked and the item count should go up
-		*/
-		UE_LOG(LogTemp, Warning, TEXT("StealableItem - STEP 4: GameMode found! Calling OnItemCollected..."));
 		GM->OnItemCollected();
 	}
 	else
 	{
-		// GameMode cast failed which means the wrong GameMode class is being used
-		UE_LOG(LogTemp, Error, TEXT("StealableItem - STEP 4 FAILED: GameMode cast failed! Check World Settings GameMode Override"));
+		UE_LOG(LogTemp, Error, TEXT("StealableItem - CollectItem FAILED: GameMode cast failed! Check World Settings GameMode Override"));
 		if (GEngine)
 		{
 			GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red,
-				TEXT("STEP 4 FAILED: GameMode is wrong class! Check World Settings"));
+				TEXT("CollectItem FAILED: GameMode is wrong class! Check World Settings"));
 		}
 	}
 
-	/* DEBUG STEP 5: Destroying the item
-	   If you see Step 4 but the item does not disappear then Destroy failed
-	*/
-	UE_LOG(LogTemp, Warning, TEXT("StealableItem - STEP 5: Destroying item %s"), *GetName());
+	// Destroy the item so it disappears from the world
 	Destroy();
 }
