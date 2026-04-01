@@ -1,30 +1,15 @@
 /*
-Project Name: Steal and Escape
-Description: A 3D top-down stealth / escape game developed in Unreal Engine 4.27
+Project Name: Steal and Escape A 3D top-down stealth  escape game developed in Unreal Engine 
 Course: CSCI 491 Seminar
 File Name: StealAndEscapeGameMode.cpp
 Author: Kushal Poudel and Alok Poudel
-Last Modified: March 17, 2026
+Last Modified: March 22, 2026
 
-Description: Implementation of the GameMode which manages win and lose conditions.
-OnPlayerCaught() is called by GuardAIController when a guard catches the player.
-OnPlayerReachedExit() is called by the ExitZone actor when the player reaches the door.
-OnItemCollected() is called by StealableItem actors when the player picks them up.
-The game ends by disabling player input, stopping character movement immediately,
-and pausing the game so all actors freeze. Later UMG widgets will be shown for
-win and lose screens.
-
-Updated: Added full implementation for game state management including
-lose condition (guard catches player), win condition (player escapes with all items),
-and item collection tracking with progress logging.
-
-Updated: Improved game-over handling. Now disables input on the controller directly
-using PC->DisableInput(PC), calls StopMovementImmediately() on the character movement
-component to prevent sliding, and calls SetGamePaused() to freeze all actors.
-
-Updated: Added on-screen debug messages using GEngine->AddOnScreenDebugMessage
-so win, lose, item pickup, and exit blocked feedback are visible during gameplay.
-These are temporary debug messages that will be replaced with UMG widgets later.
+Description: This is the Implementation of the GameMode which is the brain of our project
+it  manages win and lose conditions.
+OnPlayerCaught() is called from  GuardAIController when a guard catches the player.
+OnPlayerReachedExit() is called fromExitZone actor when the player reaches the door.
+OnItemCollected() is called from StealableItem actors when the player picks up item
 */
 
 #include "StealAndEscapeGameMode.h"
@@ -32,17 +17,15 @@ These are temporary debug messages that will be replaced with UMG widgets later.
 #include "StealAndEscapeCharacter.h"
 #include "UObject/ConstructorHelpers.h"
 #include "Kismet/GameplayStatics.h"
-// Including CharacterMovementComponent to call StopMovementImmediately when game ends
 #include "GameFramework/CharacterMovementComponent.h"
-// Including Engine.h for GEngine->AddOnScreenDebugMessage to show on-screen text during gameplay
 #include "Engine/Engine.h"
 
 AStealAndEscapeGameMode::AStealAndEscapeGameMode()
 {
-	// use our custom PlayerController class
+	// here we are using  our custom PlayerController class
 	PlayerControllerClass = AStealAndEscapePlayerController::StaticClass();
 
-	// set default pawn class to our Blueprinted character
+	// seting default pawn class to our Blueprinted character
 	static ConstructorHelpers::FClassFinder<APawn> PlayerPawnBPClass(TEXT("/Game/TopDownCPP/Blueprints/TopDownCharacter"));
 	if (PlayerPawnBPClass.Class != nullptr)
 	{
@@ -50,11 +33,11 @@ AStealAndEscapeGameMode::AStealAndEscapeGameMode()
 	}
 }
 
-/* Lose Condition - Called by GuardAIController when guard catches the player
-   First checks if the game is already over to avoid triggering multiple times
-   Disables player input and stops character movement immediately so the player freezes
-   Then pauses the game so guards and all other actors also stop moving
-   Later this will show a lose screen UMG widget
+/* This is our Lose Condition which is Called by GuardAIController when guard catches 
+   the player. here Firstly we checks if the game is already over or not to avoid 
+   triggering multiple times. Then as soon as that we Disable player input and 
+   which then stops character movement immediately so the player freezes
+   Then  game is paused so guards and all other actors also stop moving
 */
 void AStealAndEscapeGameMode::OnPlayerCaught()
 {
@@ -66,9 +49,6 @@ void AStealAndEscapeGameMode::OnPlayerCaught()
 	UE_LOG(LogTemp, Warning, TEXT("GAME OVER - Player was caught by guard!"));
 
 	/* Showing on-screen debug message so the player can see the result during gameplay
-	   Key -1 means it does not replace a previous message with the same key
-	   5.0f is how long the message stays on screen in seconds
-	   FColor::Red makes it stand out as a lose message
 	*/
 	if (GEngine)
 	{
@@ -90,18 +70,15 @@ void AStealAndEscapeGameMode::OnPlayerCaught()
 		}
 	}
 
-	// Pausing the game so guards and all other actors stop moving too
-	// This makes sure nothing keeps running in the background after game over
+	// Here we are Pausing the game so guards and all other actors stop moving too
+	// which makes sure nothing keeps running in the background after game over
 	UGameplayStatics::SetGamePaused(GetWorld(), true);
-
-	// TODO: Show lose screen UMG widget here later
 }
 
-/* Win Condition - Called by ExitZone when player overlaps the exit trigger
-   First checks if game is already over then checks if all items are collected
+/* This is the Win Condition whichis Called by ExitZone when player overlaps 
+   the exit box. First checks if game is already over then checks if all items are collected
    If items are not all collected it logs a message and does not end the game
    If all items are collected it stops movement, disables input, pauses the game
-   Later this will show a win screen UMG widget
 */
 void AStealAndEscapeGameMode::OnPlayerReachedExit()
 {
@@ -114,10 +91,6 @@ void AStealAndEscapeGameMode::OnPlayerReachedExit()
 		UE_LOG(LogTemp, Warning, TEXT("Cannot exit - Collect all items first! (%d / %d)"), CollectedItems, RequiredItems);
 
 		/* Showing on-screen debug message so the player knows they need more items
-		   Key 1 means if the player touches the exit again it replaces the old message
-		   instead of stacking multiple messages on screen
-		   3.0f seconds is enough time to read the message before it fades
-		   FColor::Yellow makes it a warning color not a fail color
 		*/
 		if (GEngine)
 		{
@@ -132,9 +105,6 @@ void AStealAndEscapeGameMode::OnPlayerReachedExit()
 	UE_LOG(LogTemp, Warning, TEXT("YOU WIN - Escaped with all items!"));
 
 	/* Showing on-screen debug message so the player can see the win result
-	   Key -1 means unique message that does not replace other messages
-	   5.0f seconds stays on screen long enough for the player to read
-	   FColor::Green makes it obvious that this is a win message
 	*/
 	if (GEngine)
 	{
@@ -158,12 +128,10 @@ void AStealAndEscapeGameMode::OnPlayerReachedExit()
 
 	// Pausing the game so everything freezes on the win screen
 	UGameplayStatics::SetGamePaused(GetWorld(), true);
-
-	// TODO: Show win screen UMG widget here later
 }
 
-/* Item Collection - Called by StealableItem when the player picks up an item
-   Increments the collected count and logs the current progress
+/* Thisis Item Collection mechanism which is  Called by StealableItem when the player picks up an item
+   Increment the collected count and logs the current progress
    This count is checked by OnPlayerReachedExit to decide if the player can escape
 */
 void AStealAndEscapeGameMode::OnItemCollected()
@@ -172,10 +140,6 @@ void AStealAndEscapeGameMode::OnItemCollected()
 	UE_LOG(LogTemp, Warning, TEXT("Item collected: %d / %d"), CollectedItems, RequiredItems);
 
 	/* Showing on-screen debug message so the player can see their collection progress
-	   Key 2 means repeated pickups replace the previous pickup message on screen
-	   instead of stacking multiple lines which would clutter the display
-	   2.0f seconds is enough to confirm the pickup without staying too long
-	   FColor::Cyan makes it a distinct info color separate from win lose and warning
 	*/
 	if (GEngine)
 	{
@@ -184,10 +148,10 @@ void AStealAndEscapeGameMode::OnItemCollected()
 	}
 }
 
-/* Helper function to check if all required items have been collected
+/* This is Helper function to check if all required items have been collected
    Returns true if the collected count is equal to or greater than required count
    Used by OnPlayerReachedExit and can also be used by the exit door blueprint
-   to show visual feedback like changing door color when unlocked
+   to show visual feedback like changing door color when unlocked.
 */
 bool AStealAndEscapeGameMode::HasCollectedAllItems() const
 {

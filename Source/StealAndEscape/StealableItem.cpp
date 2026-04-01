@@ -1,28 +1,23 @@
 /*
-Project Name: Steal and Escape
-Description: A 3D top-down stealth / escape game developed in Unreal Engine 4.27
+Project Name: Steal and Escape A 3D top-down stealth escape game developed in Unreal Engine
 Course: CSCI 491 Seminar
 
 File Name: StealableItem.cpp
-Author: Kushal Poudel and Alok Poudel
-Last Modified: March 18, 2026
+Author: Kushal Poudel 
+Last Modified: March 22, 2026
 
-Description: Implementation of the StealableItem actor which handles collectible objects.
+Description: 
+Implementing stealableitem actor which is handling collectible objects.
+whenever the player char enters the sphere collison the item notifies gamemode
+to add the collected item count and the destroying itself form the world 
 
-Updated: Changed from auto-collect to manual grab system with candidate list.
-Previously OnOverlapBegin would immediately collect the item and destroy it.
-Now OnOverlapBegin adds this item to the player character's candidate list
-and OnOverlapEnd removes it. The actual collection happens when the player
-presses G and the grab animation notify calls CollectItem() through the
-player character's CollectNearbyItem() which picks the closest candidate.
+Static mesh component  here is providing visual representation of item.
+We will add this in unreal editor adjusting the size as well as adding VFX
+so that player know which item is intractable. 
 
-CollectItem() handles the same logic as before: notifying the GameMode to increment
-the collected count and then destroying the actor. But now it only happens when the
-player intentionally grabs the item during the animation.
-
-The collision sphere uses OverlapAllDynamic profile so it generates overlap events
-without physically blocking the player. Query only collision means the player
-walks through the item and the overlap events track proximity.
+Collsion sphere uses OverLabAllDynamic profile so it doesnot block the player
+but still generates overlap events . Also the collision is query only collison
+which implies player can walk thorough it and the overlap event  handles pickup logic.
 */
 
 #include "StealableItem.h"
@@ -31,24 +26,25 @@ walks through the item and the overlap events track proximity.
 #include "Components/SphereComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Kismet/GameplayStatics.h"
-// Including Engine/World.h so Visual Studio IntelliSense can resolve GetWorld()
 #include "Engine/World.h"
-// Including Engine.h for GEngine->AddOnScreenDebugMessage to show debug text during gameplay
 #include "Engine/Engine.h"
+
+/*
+This is constructor for AStelableItem which is called in the runtime 
+as well as when the actor is first created
+*/
 
 AStealableItem::AStealableItem()
 {
 	PrimaryActorTick.bCanEverTick = false;
 
-	/* Creating the sphere collision component for detecting player proximity
-	   InitSphereRadius sets the radius of the detection area around the item
-	   200 units gives enough range for the player to be close but not too far
+	/*  
+	Setting up the first component which is collison sphere 
+	This is a invisible sphere that detectes when the player is colse enough 
+	we are reating the sphere collision component and registering it as a default subobject
 
-	   Collision is set up manually instead of using a profile name to make sure
-	   it works correctly. QueryOnly means it does not physically block anything.
-	   We set all channels to Overlap so it detects the player capsule entering.
-	   GenerateOverlapEvents must be true on both this sphere and the player capsule
-	   for OnComponentBeginOverlap and OnComponentEndOverlap to fire.
+	Also some baisc collision settings are set, which we will change later from bueprint
+	according to our need.
 	*/
 	CollisionSphere = CreateDefaultSubobject<USphereComponent>(TEXT("CollisionSphere"));
 	CollisionSphere->InitSphereRadius(200.f);
@@ -57,9 +53,10 @@ AStealableItem::AStealableItem()
 	CollisionSphere->SetGenerateOverlapEvents(true);
 	RootComponent = CollisionSphere;
 
-	/* Creating the static mesh component for the visual appearance of the item
-	   This is attached to the collision sphere so it moves with it
-	   The actual mesh like a gold coin or key is assigned in the editor or blueprint
+	/* 
+	Setting up second component which is a visible 3D item mesh that player can see
+	This is attached to the collision sphere so it moves with it
+	 The actual mesh will be assigned in the unreal engine
 	*/
 	ItemMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ItemMesh"));
 	ItemMesh->SetupAttachment(RootComponent);
@@ -71,7 +68,7 @@ void AStealableItem::BeginPlay()
 {
 	Super::BeginPlay();
 
-	/* DEBUG: Confirming that the StealableItem spawned and checking collision state */
+	// Making sure that StealableItem spawned and checking collision state 
 	if (GEngine)
 	{
 		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Orange,
@@ -79,16 +76,16 @@ void AStealableItem::BeginPlay()
 	}
 	UE_LOG(LogTemp, Warning, TEXT("StealableItem BeginPlay: %s"), *GetName());
 
-	// Checking if CollisionSphere is valid before binding
+	// Here we are Checking if CollisionSphere is valid before binding
 	if (CollisionSphere)
 	{
-		// Binding both overlap begin and end events
-		// Begin adds this item to the player's candidate list
-		// End removes this item from the player's candidate list
+		/*Binding both overlap begin and end events
+		 Firstly Begin adds this item to the player's candidate list
+		 After that End removes this item from the player's candidate list*/
 		CollisionSphere->OnComponentBeginOverlap.AddDynamic(this, &AStealableItem::OnOverlapBegin);
 		CollisionSphere->OnComponentEndOverlap.AddDynamic(this, &AStealableItem::OnOverlapEnd);
 
-		/* DEBUG: Logging the collision state so we can verify it is set up correctly */
+		/* Debuging: Logging the collision state so we can verify it is set up correctly */
 		UE_LOG(LogTemp, Warning, TEXT("StealableItem %s - Overlap events enabled: %s, Collision enabled: %d, Sphere radius: %.1f"),
 			*GetName(),
 			CollisionSphere->GetGenerateOverlapEvents() ? TEXT("YES") : TEXT("NO"),
@@ -106,9 +103,9 @@ void AStealableItem::BeginPlay()
 	}
 }
 
-/* OnOverlapBegin - Player entered the sphere collision area
-   Adds this item to the player's candidate list so it can be grabbed
-   The player must still press G to actually collect the item
+/* OnOverlapBegin  here mean Player entered the sphere collision area
+   if so that Add this item to the player's candidate list so it can be grabbed
+   The player has to press G to actually grab the item
 */
 void AStealableItem::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex,
@@ -116,7 +113,7 @@ void AStealableItem::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor*
 {
 	if (!OtherActor) return;
 
-	// Cast to player character to make sure only the player triggers this
+	// Casting  it to player char to make sure only the player can trigger
 	AStealAndEscapeCharacter* Player = Cast<AStealAndEscapeCharacter>(OtherActor);
 	if (!Player) return;
 
@@ -128,12 +125,12 @@ void AStealableItem::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor*
 			FString::Printf(TEXT("Near item: %s (Press G to grab)"), *GetName()));
 	}
 
-	// Add this item to the player's candidate list
+	// Adding this item to the player's candidate list
 	Player->AddNearbyItem(this);
 }
 
-/* OnOverlapEnd - Player left the sphere collision area
-   Removes this item from the player's candidate list so it can no longer be grabbed
+/* OnOverlapEnd mean that  Player left the collison area 
+   if so Remove this from the player's candidate list so that player cannot garb it. 
 */
 void AStealableItem::OnOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
@@ -149,10 +146,10 @@ void AStealableItem::OnOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* O
 	Player->RemoveNearbyItem(this);
 }
 
-/* CollectItem - Called by the player character when the grab animation notify fires
+/* CollectItem this is  Called by the player character when the grab animation notify fires
    and this item was selected as the closest candidate
-   This is the same collection logic as before but now it only triggers during the animation
-   Notifies the GameMode to increment the collected item count then destroys the actor
+   this is same logic like last one but now it only triggers during the animation
+   Notifies the GameMode to increment the collected item count after it then destroys the actor
 */
 void AStealableItem::CollectItem()
 {
@@ -181,6 +178,6 @@ void AStealableItem::CollectItem()
 		}
 	}
 
-	// Destroy the item so it disappears from the world
+	// Destroying the item so it disappears from the world
 	Destroy();
 }

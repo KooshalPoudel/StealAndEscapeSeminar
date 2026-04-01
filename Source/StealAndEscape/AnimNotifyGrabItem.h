@@ -2,19 +2,11 @@
 Project Name: Steal and Escape: A 3D top-down semi-escape stealth game developed in Unreal Engine
 Course: CSCI 491 Seminar
 File Name: AnimNotifyGrabItem.h
-Author: Kushal Poudel and Alok Poudel
-Last Modified: March 18, 2026
+Author: Kushal Poudel 
+Last Modified: March 22, 2026
 
-Description: This is a custom Animation Notify class that triggers item collection
-at the exact frame in the grab animation where the player's hand touches the item.
-This works the same way as AnimNotify_Footstep but instead of reporting noise
-it calls CollectNearbyItem() on the player character to pick up the item.
-
-To use this notify:
-1.) Open your GrabMontage in the Unreal Animation Editor
-2.) Right click on the Notifies track at the frame where the hand makes contact
-3.) Select Add Notify -> AnimNotifyGrabItem
-4.) The item will be collected at that exact frame during gameplay
+Description:  This is a header class Custom Animation Notify which triggers
+              item collection with the help of grab animation montage.
 */
 #pragma once
 #include "CoreMinimal.h"
@@ -26,10 +18,9 @@ class STEALANDESCAPE_API UAnimNotifyGrabItem : public UAnimNotify
 {
 	GENERATED_BODY()
 public:
-	/* Override of the Notify function from UAnimNotify
-	   This is called by the engine when the animation reaches the notify point
-	   It casts the owning actor to our player character and calls CollectNearbyItem()
-	   which tells the nearest stealable item to collect itself
+	/* Override of the existing Notify function from UAnimNotify
+	   Unreal calls this  function at the exact frame where we added notify in the 
+	   grab montage
 	*/
 	virtual void Notify(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation) override;
 };

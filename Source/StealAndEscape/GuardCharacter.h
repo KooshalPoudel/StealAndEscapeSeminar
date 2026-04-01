@@ -3,15 +3,11 @@ Project Name: Steal and Escape: A 3D top-down semi-escape stealth game developed
 Course: CSCI 491 Seminar
 
 File Name: GuardCharacter.h
-Author: Kushal Poudel
-Contributors: Alok Poudel (AI testing and gameplay integration)
-Last Modified: March 16, 2026
-
+Author:Alok Poudel
+Last Modified: March 22, 2026
 Description : Header file for custom AI Controlled Guard Character.
 This class defines the structure of the enemy guard which inherits from ACharacter.
-Actual AI behavior is implemented inside GuardAIController.
-
-Updated: Added patrol point array for waypoint-based patrol system.
+Actual AI behavior is implemented inside GuardAIController. patrol point array for waypoint-based patrol system.
 Guards can now have unique patrol routes set in the level editor.
 */
 
@@ -47,18 +43,18 @@ public:
 
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
-	/* Patrol Points Array - Set in the Level Editor
-	   Each element is a world-space location that the guard will walk to in order.
-	   After reaching the last point, the guard loops back to the first point.
+	/* Patrol Points Array  Set in the Level Editor
+	   Each element is a world-space location that the guard will walk to in orders
+	   After reaching the last point the guard loops back to the first point
 	*/
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Patrol", meta = (MakeEditWidget = "true"))
 		TArray<FVector> PatrolPoints;
 
-	/* Patrol speed - how fast the guard walks while patrolling */
+	/* Patrol speed how fast the guard walks while patrolling */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Patrol")
 		float PatrolSpeed = 150.f;
 
-	/* Chase speed - how fast the guard runs when chasing the player */
+	/* Chase speed how fast the guard runs when chasing the player */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Patrol")
 		float ChaseSpeed = 400.f;
 

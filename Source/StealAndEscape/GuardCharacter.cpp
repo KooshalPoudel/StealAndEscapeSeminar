@@ -1,18 +1,15 @@
-﻿/*
+/*
 Project Name: Steal and Escape: A 3D top-down semi-escape stealth game developed in Unreal Engine
 Course: CSCI 491 Seminar
 
 File Name: GuardCharacter.cpp
-Author: Kushal Poudel
-Contributors: Alok Poudel (AI testing and gameplay integration)
-Last Modified: March 16, 2026
+Author:Alok Poudel 
+Last Modified: March 22, 2026
 
 Description : This is for creating a custom Guard Character which is AI Controlled.
 The guard is controlled by GuardAIController and is automatically possessed when placed in the world.
 Mesh setup, animation blueprint assignment, movement configuration, and AI controller assignment
-are custom implemented for enemy guard behavior.
-
-Updated: Guard now uses PatrolSpeed as default walk speed. Chase speed is applied
+are custom implemented for enemy guard behavior. Guarduses PatrolSpeed as default walk speed. Chase speed is applied
 by the GuardAIController when the player is detected.
 */
 

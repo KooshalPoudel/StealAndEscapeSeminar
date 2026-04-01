@@ -2,19 +2,18 @@
 Project Name: Steal and Escape: A 3D top-down semi-escape stealth game developed in Unreal Engine
 Course: CSCI 491 Seminar
 File Name: GuardAIController.h
-Author: Alok Poudel
-Contributors: Kushal Poudel
-Last Modified: March 17, 2026
-Description: GuardAIController handles the enemy guard's AI behavior using
-Unreal Engine's AI Perception system. This class controls how the guard recognizes the player,
-interprets visual and audio cues, and reacts to visibility changes.
-
-Updated: Added patrol state machine with three states (Patrolling, Chasing, Investigating).
-Guards now walk between patrol waypoints, chase on sight, investigate on hearing,
-and return to their nearest patrol point after losing the player.
-
-Updated: Added lose condition trigger. When the guard is in Chasing state and gets
-within CatchDistance of the player, it calls GameMode->OnPlayerCaught() to end the game.
+Author: Alok Poudel & Kushal Poudel
+Last Modified: March 22, 2026
+ 
+Description: GuardAIController is responsible for controlling the enemy guard's behavior using Unreal Engine's
+             AI Perception system. This class controls how the guard recognizes the player, interprets visual 
+			 and audio cues, and reacts accordingly using a three-state behavior machine. In the Patrolling state 
+			 the guard walks between waypoints set in the level editor and waits briefly at each one before continuing. 
+			 In the Chasing state the guard sprints directly toward the player when detected by sight, and if it gets 
+			 within CatchDistance it stops and calls GameMode->OnPlayerCaught() to trigger the lose condition. 
+			 In the Investigating state the guard walks to the location of a heard noise before returning to the 
+			 nearest patrol point and resuming normal patrol. Guards always return to their nearest patrol point after 
+			 losing the player or finishing an investigation.
 */
 #pragma once
 #include "CoreMinimal.h"
@@ -22,10 +21,10 @@ within CatchDistance of the player, it calls GameMode->OnPlayerCaught() to end t
 #include "Perception/AIPerceptionTypes.h"
 #include "GuardAIController.generated.h"
 
-/* Enum for guard behavior states
-   Patrolling = walking between patrol waypoints
-   Chasing = actively pursuing the player (sight detection)
-   Investigating = moving to a heard noise location then returning to patrol
+/* guard behavior states
+   Patrolling is walking between patrol waypoints
+   Chasing is actively pursuing the player sight detection
+   Investigating is moving to a heard noise location then returning to patrol
 */
 UENUM(BlueprintType)
 enum class EGuardState : uint8
@@ -34,7 +33,8 @@ enum class EGuardState : uint8
 	Chasing,
 	Investigating
 };
-
+/* AGuardAIController inherits from AAIController which is Unreal's built-in base class
+   for AI controllers.*/
 UCLASS()
 class STEALANDESCAPE_API AGuardAIController : public AAIController
 {
@@ -44,11 +44,14 @@ public:
 	AGuardAIController();
 
 protected:
+    //this is called by the engine when this controller takes control of a pawn
 	virtual void OnPossess(APawn* InPawn) override;
+    // this tick is called every frame by the engine we use it to poll conditions that cannot be driven purely by events
+    
 	virtual void Tick(float DeltaSeconds) override;
 
 private:
-	/* AI Perception Components */
+	/* This is for AI Perception Components */
 	UPROPERTY()
 		class UAIPerceptionComponent* PerceptionComp;
 	UPROPERTY()
@@ -59,40 +62,39 @@ private:
 	UFUNCTION()
 		void OnTargetDetected(AActor* Actor, FAIStimulus Stimulus);
 
-	/* Patrol System Variables */
+	/* This Patrol System Variables */
 
-	// Current behavior state of the guard
+	// this is foe current behavior state of the guard
 	EGuardState CurrentState = EGuardState::Patrolling;
 
-	// Index of the current patrol point the guard is walking toward
+	// this is index of the current patrol point the guard is walking toward
 	int32 CurrentPatrolIndex = 0;
 
-	// Whether the guard is currently waiting at a patrol point
+	// this is to know if the guard is currently waiting at a patrol point
 	bool bIsWaiting = false;
 
-	// Timer handle for the wait delay at patrol points
+	// this handles timer cancel to switch between patrol and chasing
 	FTimerHandle PatrolWaitTimerHandle;
 
-	/* Patrol System Methods */
+	/* Belows this is for the guard to move between patrol points*/
 
-	// Moves the guard to the next patrol waypoint in the array
+	// this moves the guard to the next patrol waypoint in the array
 	void MoveToNextPatrolPoint();
 
-	// Called when the wait timer finishes at a patrol point
+	// this is called when the wait timer finishes at a patrol point
 	void OnPatrolWaitFinished();
 
-	// Finds the closest patrol point index and starts moving there
+	// this finds the closest patrol point index and starts moving there
 	void ReturnToPatrol();
 
-	// How close the guard needs to be to a patrol point to consider it reached (in unreal units)
+	// this is to know how close the guard has to be near the patrol points to know it reached there
 	float PatrolAcceptanceRadius = 150.f;
 
-	/* Catch System Variables */
+	/* Below this is catch System Variables */
 
-	// How close the guard needs to be to the player to catch them during chase (in unreal units)
-	// When distance between guard and player is less than this value the player is caught
+	// this shows how close the guard has to be to know the player has been caught
 	float CatchDistance = 100.f;
 
-	// Whether the guard has already triggered a catch to prevent calling OnPlayerCaught multiple times
+	// this prevents from calling the OnPlayerCaught() multiple times while is in distance of catching  player
 	bool bHasCaughtPlayer = false;
 };
