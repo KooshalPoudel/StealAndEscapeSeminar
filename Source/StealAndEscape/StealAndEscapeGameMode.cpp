@@ -3,21 +3,28 @@ Project Name: Steal and Escape A 3D top-down stealth  escape game developed in U
 Course: CSCI 491 Seminar
 File Name: StealAndEscapeGameMode.cpp
 Author: Kushal Poudel and Alok Poudel
-Last Modified: March 22, 2026
+Last Modified: April 16, 2026
 
 Description: This is the Implementation of the GameMode which is the brain of our project
 it  manages win and lose conditions.
 OnPlayerCaught() is called from  GuardAIController when a guard catches the player.
 OnPlayerReachedExit() is called fromExitZone actor when the player reaches the door.
 OnItemCollected() is called from StealableItem actors when the player picks up item
+
+Update (April 16 2026): On win / lose we now also spawn the EndScreenWidget so
+the player sees a proper game over screen with Retry / Main Menu / Quit buttons.
+The widget is added to the viewport on top of the paused world so the scene
+freezes behind it.
 */
 
 #include "StealAndEscapeGameMode.h"
 #include "StealAndEscapePlayerController.h"
 #include "StealAndEscapeCharacter.h"
+#include "EndScreenWidget.h"
 #include "UObject/ConstructorHelpers.h"
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Blueprint/UserWidget.h"
 #include "Engine/Engine.h"
 
 AStealAndEscapeGameMode::AStealAndEscapeGameMode()
@@ -48,13 +55,6 @@ void AStealAndEscapeGameMode::OnPlayerCaught()
 
 	UE_LOG(LogTemp, Warning, TEXT("GAME OVER - Player was caught by guard!"));
 
-	/* Showing on-screen debug message so the player can see the result during gameplay
-	*/
-	if (GEngine)
-	{
-		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, TEXT("GAME OVER - You were caught!"));
-	}
-
 	// Getting player controller to disable input so player cannot move after being caught
 	APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0);
 	if (PC)
@@ -68,6 +68,15 @@ void AStealAndEscapeGameMode::OnPlayerCaught()
 		{
 			PlayerChar->GetCharacterMovement()->StopMovementImmediately();
 		}
+	}
+
+	// Spawn the end screen in LOSE configuration BEFORE pausing. The widget
+	// still accepts UI input while the world is paused because UMG runs on
+	// real time not game time.
+	UEndScreenWidget* EndScreen = SpawnEndScreen();
+	if (EndScreen)
+	{
+		EndScreen->ShowLoseScreen(CollectedItems, RequiredItems);
 	}
 
 	// Here we are Pausing the game so guards and all other actors stop moving too
@@ -90,8 +99,9 @@ void AStealAndEscapeGameMode::OnPlayerReachedExit()
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Cannot exit - Collect all items first! (%d / %d)"), CollectedItems, RequiredItems);
 
-		/* Showing on-screen debug message so the player knows they need more items
-		*/
+		/* Showing on-screen debug message so the player knows they need more items.
+		   This is the only case where we still use the debug message path because
+		   it is a transient warning not a game-over state. */
 		if (GEngine)
 		{
 			GEngine->AddOnScreenDebugMessage(1, 3.0f, FColor::Yellow,
@@ -103,13 +113,6 @@ void AStealAndEscapeGameMode::OnPlayerReachedExit()
 	bIsGameOver = true;
 
 	UE_LOG(LogTemp, Warning, TEXT("YOU WIN - Escaped with all items!"));
-
-	/* Showing on-screen debug message so the player can see the win result
-	*/
-	if (GEngine)
-	{
-		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, TEXT("YOU WIN - Escaped with all items!"));
-	}
 
 	// Getting player controller to disable input after winning
 	APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0);
@@ -124,6 +127,13 @@ void AStealAndEscapeGameMode::OnPlayerReachedExit()
 		{
 			PlayerChar->GetCharacterMovement()->StopMovementImmediately();
 		}
+	}
+
+	// Spawn the end screen in WIN configuration BEFORE pausing
+	UEndScreenWidget* EndScreen = SpawnEndScreen();
+	if (EndScreen)
+	{
+		EndScreen->ShowWinScreen(CollectedItems, RequiredItems);
 	}
 
 	// Pausing the game so everything freezes on the win screen
@@ -156,4 +166,36 @@ void AStealAndEscapeGameMode::OnItemCollected()
 bool AStealAndEscapeGameMode::HasCollectedAllItems() const
 {
 	return CollectedItems >= RequiredItems;
+}
+
+/* Creates the end screen widget from the configured class and adds it to the
+   viewport with UI input mode so the player can click its buttons while the
+   world is paused. Returns nullptr if EndScreenWidgetClass was never set so
+   callers can guard against the no-UI fallback. */
+UEndScreenWidget* AStealAndEscapeGameMode::SpawnEndScreen()
+{
+	if (!EndScreenWidgetClass)
+	{
+		UE_LOG(LogTemp, Error, TEXT("StealAndEscapeGameMode - EndScreenWidgetClass is not set! Assign it on BP_StealAndEscapeGameMode defaults."));
+		return nullptr;
+	}
+
+	APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0);
+	if (!PC) return nullptr;
+
+	EndScreenInstance = CreateWidget<UEndScreenWidget>(PC, EndScreenWidgetClass);
+	if (!EndScreenInstance) return nullptr;
+
+	EndScreenInstance->AddToViewport();
+
+	/* Switch to UI-only input so button clicks work cleanly. Show cursor in
+	   case it was hidden during gameplay. The next level load will reset the
+	   input mode via StealAndEscapePlayerController::BeginPlay. */
+	FInputModeUIOnly InputMode;
+	InputMode.SetWidgetToFocus(EndScreenInstance->TakeWidget());
+	InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+	PC->SetInputMode(InputMode);
+	PC->bShowMouseCursor = true;
+
+	return EndScreenInstance;
 }
