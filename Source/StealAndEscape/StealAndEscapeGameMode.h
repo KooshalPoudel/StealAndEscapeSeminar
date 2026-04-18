@@ -3,11 +3,14 @@ Project Name: Steal and Escape: A 3D top-down semi-escape stealth game developed
 Course: CSCI 491 Seminar
 File Name: StealAndEscapeGameMode.h
 Author: Kushal Poudel and Alok Poudel
-Last Modified: April 16, 2026
+Last Modified: April 18, 2026
 
 Description: This is header file for StealAndEscapeGameMode.cpp
-             Added EndScreenWidgetClass property and widget instance pointer
-             so the game mode can spawn the end screen UI on win or lose.
+             Added in this revision:
+             - ElapsedTime tracking (ticks during gameplay, frozen on win/lose)
+             - CalculateScore() function using the scoring formula
+             - HUDWidgetClass property and HUD spawn on BeginPlay
+             EndScreenWidget calls remain unchanged (2-arg signatures).
 */
 
 #pragma once
@@ -16,6 +19,7 @@ Description: This is header file for StealAndEscapeGameMode.cpp
 #include "StealAndEscapeGameMode.generated.h"
 
 class UEndScreenWidget;
+class UHUDWidget;
 
 UCLASS(minimalapi)
 class AStealAndEscapeGameMode : public AGameModeBase
@@ -25,57 +29,63 @@ class AStealAndEscapeGameMode : public AGameModeBase
 public:
 	AStealAndEscapeGameMode();
 
-	/* This is Called from GuardAIController when guard gets close enough to catch the player
-	*/
+	virtual void BeginPlay() override;
+	virtual void Tick(float DeltaTime) override;
+
+	/* Called from GuardAIController when guard catches the player */
 	UFUNCTION(BlueprintCallable, Category = "GameState")
 		void OnPlayerCaught();
 
-	/* This is Called by ExitZone when the player overlaps the exit trigger
-	*/
+	/* Called by ExitZone when the player overlaps the exit trigger */
 	UFUNCTION(BlueprintCallable, Category = "GameState")
 		void OnPlayerReachedExit();
 
-	/* This is Called by StealableItem when the player picks up a collectible
-	*/
+	/* Called by StealableItem when the player picks up a collectible */
 	UFUNCTION(BlueprintCallable, Category = "GameState")
 		void OnItemCollected();
 
-	/*This  Checks whether the player has collected all required items
-	  This is used by exit zone.
-	*/
+	/* Checks whether the player has collected all required items */
 	UFUNCTION(BlueprintCallable, Category = "GameState")
 		bool HasCollectedAllItems() const;
 
-	/* These are ourGame State Variables */
+	/* Calculate the final score from current items + elapsed time.
+	   Formula: (items * 1000) + time bonus
+	   Time bonus: 1000 if time <= 60s, otherwise max(0, 1000 - (time-60)*2)
+	   Public so the HUD widget can call it each tick for live display. */
+	UFUNCTION(BlueprintCallable, Category = "GameState")
+		int32 CalculateScore() const;
 
-	// Whether the game has ended either by win or lose to prevent repeated triggers
+	/* Game State Variables */
+
 	UPROPERTY(BlueprintReadOnly, Category = "GameState")
 		bool bIsGameOver = false;
 
-	// How many items the player has collected
 	UPROPERTY(BlueprintReadOnly, Category = "GameState")
 		int32 CollectedItems = 0;
 
-	// How many items need to be collected before the exit unlocks 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "GameState")
 		int32 RequiredItems = 1;
 
-	/* Widget Blueprint class spawned when the game ends.
-	   Set this on a Blueprint child of this GameMode (or directly in the
-	   Blueprint GameMode asset) to the WBP_EndScreen widget class. If left
-	   null the game will still pause on win / lose but no end screen shows. */
+	/* Elapsed gameplay time in seconds. Incremented during Tick while the
+	   game is not over. Used by HUD display and final score calculation. */
+	UPROPERTY(BlueprintReadOnly, Category = "GameState")
+		float ElapsedTime = 0.f;
+
+	/* Widget Blueprint class spawned when the game ends */
 	UPROPERTY(EditDefaultsOnly, Category = "UI")
 		TSubclassOf<UEndScreenWidget> EndScreenWidgetClass;
 
+	/* Widget Blueprint class spawned on BeginPlay as the gameplay HUD */
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+		TSubclassOf<UHUDWidget> HUDWidgetClass;
+
 private:
-	/* Holds the spawned end screen so it is not garbage collected before the
-	   player clicks a button. Cleared when the widget removes itself from
-	   the viewport during a level transition. */
 	UPROPERTY()
 		UEndScreenWidget* EndScreenInstance = nullptr;
 
-	/* Spawns and configures the end screen widget.
-	   Returns the created widget or nullptr if EndScreenWidgetClass is unset.
-	   Caller is responsible for calling ShowWinScreen or ShowLoseScreen on it. */
+	UPROPERTY()
+		UHUDWidget* HUDInstance = nullptr;
+
 	UEndScreenWidget* SpawnEndScreen();
+	void SpawnHUD();
 };

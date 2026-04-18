@@ -3,7 +3,7 @@ Project Name: Steal and Escape A 3D top-down stealth  escape game developed in U
 Course: CSCI 491 Seminar
 File Name: StealAndEscapeGameMode.cpp
 Author: Kushal Poudel and Alok Poudel
-Last Modified: April 16, 2026
+Last Modified: April 18, 2026
 
 Description: This is the Implementation of the GameMode which is the brain of our project
 it  manages win and lose conditions.
@@ -11,16 +11,16 @@ OnPlayerCaught() is called from  GuardAIController when a guard catches the play
 OnPlayerReachedExit() is called fromExitZone actor when the player reaches the door.
 OnItemCollected() is called from StealableItem actors when the player picks up item
 
-Update (April 16 2026): On win / lose we now also spawn the EndScreenWidget so
-the player sees a proper game over screen with Retry / Main Menu / Quit buttons.
-The widget is added to the viewport on top of the paused world so the scene
-freezes behind it.
+Update (April 16 2026): On win / lose we now also spawn the EndScreenWidget.
+Update (April 18 2026): Added gameplay timer, score calculation, HUD widget spawn.
+Update (April 18 2026): EndScreen now receives time and score for display.
 */
 
 #include "StealAndEscapeGameMode.h"
 #include "StealAndEscapePlayerController.h"
 #include "StealAndEscapeCharacter.h"
 #include "EndScreenWidget.h"
+#include "HUDWidget.h"
 #include "UObject/ConstructorHelpers.h"
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -38,31 +38,74 @@ AStealAndEscapeGameMode::AStealAndEscapeGameMode()
 	{
 		DefaultPawnClass = PlayerPawnBPClass.Class;
 	}
+
+	// Enable tick so we can run the gameplay timer
+	PrimaryActorTick.bCanEverTick = true;
 }
 
-/* This is our Lose Condition which is Called by GuardAIController when guard catches 
-   the player. here Firstly we checks if the game is already over or not to avoid 
-   triggering multiple times. Then as soon as that we Disable player input and 
-   which then stops character movement immediately so the player freezes
-   Then  game is paused so guards and all other actors also stop moving
-*/
+void AStealAndEscapeGameMode::BeginPlay()
+{
+	Super::BeginPlay();
+
+	// Reset game state on level begin - required for Retry to work correctly
+	bIsGameOver = false;
+	CollectedItems = 0;
+	ElapsedTime = 0.f;
+
+	// Spawn the HUD so the player sees item count, timer, and score from frame 1
+	SpawnHUD();
+}
+
+void AStealAndEscapeGameMode::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+	// Only advance the timer while the game is actively being played
+	if (!bIsGameOver)
+	{
+		ElapsedTime += DeltaTime;
+	}
+}
+
+/* Score formula:
+     item bonus = CollectedItems * 1000
+     time bonus = 1000 if ElapsedTime <= 30s
+                  otherwise max(0, 1000 - (ElapsedTime - 30) * 2)
+     total = item bonus + time bonus
+   Score is always non-negative. */
+int32 AStealAndEscapeGameMode::CalculateScore() const
+{
+	int32 ItemBonus = CollectedItems * 1000;
+
+	int32 TimeBonus = 0;
+	if (ElapsedTime <= 30.f)
+	{
+		TimeBonus = 1000;
+	}
+	else
+	{
+		float ExtraSeconds = ElapsedTime - 30.f;
+		int32 Deduction = FMath::FloorToInt(ExtraSeconds * 2.f);
+		TimeBonus = FMath::Max(0, 1000 - Deduction);
+	}
+
+	return ItemBonus + TimeBonus;
+}
+
+/* This is our Lose Condition */
 void AStealAndEscapeGameMode::OnPlayerCaught()
 {
-	// If game is already over do not trigger again
 	if (bIsGameOver) return;
 
 	bIsGameOver = true;
 
 	UE_LOG(LogTemp, Warning, TEXT("GAME OVER - Player was caught by guard!"));
 
-	// Getting player controller to disable input so player cannot move after being caught
 	APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0);
 	if (PC)
 	{
-		// Disabling input on the controller itself so no input reaches the character at all
 		PC->DisableInput(PC);
 
-		// Also stopping character movement immediately so the character does not slide or drift
 		ACharacter* PlayerChar = Cast<ACharacter>(PC->GetPawn());
 		if (PlayerChar && PlayerChar->GetCharacterMovement())
 		{
@@ -70,38 +113,31 @@ void AStealAndEscapeGameMode::OnPlayerCaught()
 		}
 	}
 
-	// Spawn the end screen in LOSE configuration BEFORE pausing. The widget
-	// still accepts UI input while the world is paused because UMG runs on
-	// real time not game time.
+	// Remove the HUD so it does not clutter the end screen
+	if (HUDInstance)
+	{
+		HUDInstance->RemoveFromParent();
+		HUDInstance = nullptr;
+	}
+
+	// Spawn end screen - LOSE gets time but no score
 	UEndScreenWidget* EndScreen = SpawnEndScreen();
 	if (EndScreen)
 	{
-		EndScreen->ShowLoseScreen(CollectedItems, RequiredItems);
+		EndScreen->ShowLoseScreen(CollectedItems, RequiredItems, ElapsedTime);
 	}
 
-	// Here we are Pausing the game so guards and all other actors stop moving too
-	// which makes sure nothing keeps running in the background after game over
 	UGameplayStatics::SetGamePaused(GetWorld(), true);
 }
 
-/* This is the Win Condition whichis Called by ExitZone when player overlaps 
-   the exit box. First checks if game is already over then checks if all items are collected
-   If items are not all collected it logs a message and does not end the game
-   If all items are collected it stops movement, disables input, pauses the game
-*/
+/* This is the Win Condition */
 void AStealAndEscapeGameMode::OnPlayerReachedExit()
 {
-	// If game is already over do not trigger again
 	if (bIsGameOver) return;
 
-	// Check if player has collected all required items before allowing escape
 	if (!HasCollectedAllItems())
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Cannot exit - Collect all items first! (%d / %d)"), CollectedItems, RequiredItems);
-
-		/* Showing on-screen debug message so the player knows they need more items.
-		   This is the only case where we still use the debug message path because
-		   it is a transient warning not a game-over state. */
 		if (GEngine)
 		{
 			GEngine->AddOnScreenDebugMessage(1, 3.0f, FColor::Yellow,
@@ -112,16 +148,15 @@ void AStealAndEscapeGameMode::OnPlayerReachedExit()
 
 	bIsGameOver = true;
 
-	UE_LOG(LogTemp, Warning, TEXT("YOU WIN - Escaped with all items!"));
+	int32 FinalScore = CalculateScore();
+	UE_LOG(LogTemp, Warning, TEXT("YOU WIN - Escaped with all items! Score: %d, Time: %.1fs"),
+		FinalScore, ElapsedTime);
 
-	// Getting player controller to disable input after winning
 	APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0);
 	if (PC)
 	{
-		// Disabling input on the controller itself so no input reaches the character
 		PC->DisableInput(PC);
 
-		// Also stopping character movement immediately so the character does not slide
 		ACharacter* PlayerChar = Cast<ACharacter>(PC->GetPawn());
 		if (PlayerChar && PlayerChar->GetCharacterMovement())
 		{
@@ -129,28 +164,29 @@ void AStealAndEscapeGameMode::OnPlayerReachedExit()
 		}
 	}
 
-	// Spawn the end screen in WIN configuration BEFORE pausing
+	// Remove HUD on win
+	if (HUDInstance)
+	{
+		HUDInstance->RemoveFromParent();
+		HUDInstance = nullptr;
+	}
+
+	// Spawn end screen - WIN gets time and score
 	UEndScreenWidget* EndScreen = SpawnEndScreen();
 	if (EndScreen)
 	{
-		EndScreen->ShowWinScreen(CollectedItems, RequiredItems);
+		EndScreen->ShowWinScreen(CollectedItems, RequiredItems, ElapsedTime, FinalScore);
 	}
 
-	// Pausing the game so everything freezes on the win screen
 	UGameplayStatics::SetGamePaused(GetWorld(), true);
 }
 
-/* Thisis Item Collection mechanism which is  Called by StealableItem when the player picks up an item
-   Increment the collected count and logs the current progress
-   This count is checked by OnPlayerReachedExit to decide if the player can escape
-*/
+/* Item Collection */
 void AStealAndEscapeGameMode::OnItemCollected()
 {
 	CollectedItems++;
 	UE_LOG(LogTemp, Warning, TEXT("Item collected: %d / %d"), CollectedItems, RequiredItems);
 
-	/* Showing on-screen debug message so the player can see their collection progress
-	*/
 	if (GEngine)
 	{
 		GEngine->AddOnScreenDebugMessage(2, 2.0f, FColor::Cyan,
@@ -158,25 +194,17 @@ void AStealAndEscapeGameMode::OnItemCollected()
 	}
 }
 
-/* This is Helper function to check if all required items have been collected
-   Returns true if the collected count is equal to or greater than required count
-   Used by OnPlayerReachedExit and can also be used by the exit door blueprint
-   to show visual feedback like changing door color when unlocked.
-*/
 bool AStealAndEscapeGameMode::HasCollectedAllItems() const
 {
 	return CollectedItems >= RequiredItems;
 }
 
-/* Creates the end screen widget from the configured class and adds it to the
-   viewport with UI input mode so the player can click its buttons while the
-   world is paused. Returns nullptr if EndScreenWidgetClass was never set so
-   callers can guard against the no-UI fallback. */
+/* Spawns end screen widget */
 UEndScreenWidget* AStealAndEscapeGameMode::SpawnEndScreen()
 {
 	if (!EndScreenWidgetClass)
 	{
-		UE_LOG(LogTemp, Error, TEXT("StealAndEscapeGameMode - EndScreenWidgetClass is not set! Assign it on BP_StealAndEscapeGameMode defaults."));
+		UE_LOG(LogTemp, Error, TEXT("StealAndEscapeGameMode - EndScreenWidgetClass is not set!"));
 		return nullptr;
 	}
 
@@ -188,9 +216,6 @@ UEndScreenWidget* AStealAndEscapeGameMode::SpawnEndScreen()
 
 	EndScreenInstance->AddToViewport();
 
-	/* Switch to UI-only input so button clicks work cleanly. Show cursor in
-	   case it was hidden during gameplay. The next level load will reset the
-	   input mode via StealAndEscapePlayerController::BeginPlay. */
 	FInputModeUIOnly InputMode;
 	InputMode.SetWidgetToFocus(EndScreenInstance->TakeWidget());
 	InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
@@ -198,4 +223,23 @@ UEndScreenWidget* AStealAndEscapeGameMode::SpawnEndScreen()
 	PC->bShowMouseCursor = true;
 
 	return EndScreenInstance;
+}
+
+/* Spawns HUD widget */
+void AStealAndEscapeGameMode::SpawnHUD()
+{
+	if (!HUDWidgetClass)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("StealAndEscapeGameMode - HUDWidgetClass is not set. Skipping HUD spawn."));
+		return;
+	}
+
+	APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0);
+	if (!PC) return;
+
+	HUDInstance = CreateWidget<UHUDWidget>(PC, HUDWidgetClass);
+	if (HUDInstance)
+	{
+		HUDInstance->AddToViewport();
+	}
 }

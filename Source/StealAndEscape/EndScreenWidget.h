@@ -3,22 +3,14 @@ Project Name: Steal and Escape: A 3D top-down semi-escape stealth game developed
 Course: CSCI 491 Seminar
 File Name: EndScreenWidget.h
 Author: Kushal Poudel and Alok Poudel
-Last Modified: April 16, 2026
+Last Modified: April 18, 2026
 
-Description: End-of-game screen widget shown when the player wins (escaped with
-             all items) or loses (caught by a guard). Displays a title that
-             changes based on the outcome, a subtitle showing stats like items
-             collected, and three action buttons: Retry, Main Menu, and Quit.
+Description: End-of-game screen widget. Displays title, item stats, time,
+             score, and action buttons. On win a Submit Score button appears
+             which opens the NameEntryWidget popup for leaderboard submission.
 
-             Spawned by StealAndEscapeGameMode on win or lose. The widget is
-             added to the viewport while the game is paused so the end screen
-             pauses gameplay and freezes guard movement.
-
-             The title text and color are set dynamically via ShowWinScreen or
-             ShowLoseScreen before the widget is added to the viewport. The
-             title TextBlock and subtitle TextBlock are bound by name so the
-             UMG asset must contain widgets named exactly Txt_Title and
-             Txt_Stats for the binding to resolve.
+             Update (April 18 2026): Added Btn_SubmitScore and NameEntryWidgetClass
+             for the leaderboard submission flow.
 */
 
 #pragma once
@@ -29,6 +21,7 @@ Description: End-of-game screen widget shown when the player wins (escaped with
 
 class UButton;
 class UTextBlock;
+class UNameEntryWidget;
 
 UCLASS()
 class STEALANDESCAPE_API UEndScreenWidget : public UUserWidget
@@ -38,66 +31,63 @@ class STEALANDESCAPE_API UEndScreenWidget : public UUserWidget
 public:
 	virtual void NativeConstruct() override;
 
-	/* Configure this widget for a WIN outcome before adding to viewport.
-	   Sets title to ESCAPED and the stats line to the items collected. */
+	/* Configure for WIN - shows items, time, score, and Submit Score button */
 	UFUNCTION(BlueprintCallable, Category = "EndScreen")
-		void ShowWinScreen(int32 ItemsCollected, int32 ItemsRequired);
+		void ShowWinScreen(int32 ItemsCollected, int32 ItemsRequired, float TimeTaken, int32 FinalScore);
 
-	/* Configure this widget for a LOSE outcome before adding to viewport.
-	   Sets title to BUSTED and the stats line to the items collected. */
+	/* Configure for LOSE - shows items and time, hides score and Submit */
 	UFUNCTION(BlueprintCallable, Category = "EndScreen")
-		void ShowLoseScreen(int32 ItemsCollected, int32 ItemsRequired);
+		void ShowLoseScreen(int32 ItemsCollected, int32 ItemsRequired, float TimeTaken);
 
 protected:
-	/* ======================================================================
-	   BOUND WIDGETS - must exist in the UMG asset with these exact names.
-	   ====================================================================== */
-
-	// Large title text - set to ESCAPED or BUSTED depending on outcome
 	UPROPERTY(meta = (BindWidget))
 		UTextBlock* Txt_Title;
 
-	// Smaller subtitle text showing items collected
 	UPROPERTY(meta = (BindWidget))
 		UTextBlock* Txt_Stats;
 
-	// Retry - reloads the current level
+	UPROPERTY(meta = (BindWidget))
+		UTextBlock* Txt_Time;
+
+	UPROPERTY(meta = (BindWidget))
+		UTextBlock* Txt_Score;
+
+	UPROPERTY(meta = (BindWidget))
+		UButton* Btn_SubmitScore;
+
 	UPROPERTY(meta = (BindWidget))
 		UButton* Btn_Retry;
 
-	// Main Menu - opens L_MainMenu
 	UPROPERTY(meta = (BindWidget))
 		UButton* Btn_MainMenu;
 
-	// Quit - exits the game
 	UPROPERTY(meta = (BindWidget))
 		UButton* Btn_Quit;
 
-	/* ======================================================================
-	   CONFIGURATION - set on the Widget Blueprint defaults.
-	   ====================================================================== */
-
-	// Name of the main menu level to return to when Main Menu is clicked
 	UPROPERTY(EditDefaultsOnly, Category = "Levels")
 		FName MainMenuLevelName = TEXT("L_MainMenu");
 
-	// Color applied to the title text on a win (green by default)
 	UPROPERTY(EditDefaultsOnly, Category = "Colors")
 		FLinearColor WinColor = FLinearColor(0.2f, 1.0f, 0.3f, 1.0f);
 
-	// Color applied to the title text on a loss (red by default)
 	UPROPERTY(EditDefaultsOnly, Category = "Colors")
 		FLinearColor LoseColor = FLinearColor(1.0f, 0.2f, 0.2f, 1.0f);
 
+	/* Widget class for the name entry popup. Set in WBP_EndScreen Class Defaults. */
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+		TSubclassOf<UNameEntryWidget> NameEntryWidgetClass;
+
 private:
-	/* Button click handlers. UFUNCTION is required for AddDynamic to bind them. */
+	/* Cached values for when Submit is clicked */
+	int32 CachedItems = 0;
+	float CachedTime = 0.f;
+	int32 CachedScore = 0;
+
+	UFUNCTION() void OnSubmitScoreClicked();
 	UFUNCTION() void OnRetryClicked();
 	UFUNCTION() void OnMainMenuClicked();
 	UFUNCTION() void OnQuitClicked();
 
-	/* Common cleanup before loading a new level.
-	   Unpauses the game and clears UI-only input mode so the next level works
-	   normally. Without these the new level would load paused or with the UI
-	   input mode stuck and the player could not move. */
 	void PrepareForLevelTransition();
+	FString FormatTime(float Seconds) const;
 };
