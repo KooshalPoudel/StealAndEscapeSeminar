@@ -3,17 +3,10 @@ Project Name: Steal and Escape A 3D top-down stealth  escape game developed in U
 Course: CSCI 491 Seminar
 File Name: StealAndEscapeGameMode.cpp
 Author: Kushal Poudel and Alok Poudel
-Last Modified: April 18, 2026
+Last Modified: April 19, 2026
 
-Description: This is the Implementation of the GameMode which is the brain of our project
-it  manages win and lose conditions.
-OnPlayerCaught() is called from  GuardAIController when a guard catches the player.
-OnPlayerReachedExit() is called fromExitZone actor when the player reaches the door.
-OnItemCollected() is called from StealableItem actors when the player picks up item
-
-Update (April 16 2026): On win / lose we now also spawn the EndScreenWidget.
-Update (April 18 2026): Added gameplay timer, score calculation, HUD widget spawn.
-Update (April 18 2026): EndScreen now receives time and score for display.
+Description: Implementation of the GameMode. Added item pickup, win, and lose
+             sound effects via PlaySound2D.
 */
 
 #include "StealAndEscapeGameMode.h"
@@ -29,17 +22,14 @@ Update (April 18 2026): EndScreen now receives time and score for display.
 
 AStealAndEscapeGameMode::AStealAndEscapeGameMode()
 {
-	// here we are using  our custom PlayerController class
 	PlayerControllerClass = AStealAndEscapePlayerController::StaticClass();
 
-	// seting default pawn class to our Blueprinted character
 	static ConstructorHelpers::FClassFinder<APawn> PlayerPawnBPClass(TEXT("/Game/TopDownCPP/Blueprints/TopDownCharacter"));
 	if (PlayerPawnBPClass.Class != nullptr)
 	{
 		DefaultPawnClass = PlayerPawnBPClass.Class;
 	}
 
-	// Enable tick so we can run the gameplay timer
 	PrimaryActorTick.bCanEverTick = true;
 }
 
@@ -47,12 +37,10 @@ void AStealAndEscapeGameMode::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// Reset game state on level begin - required for Retry to work correctly
 	bIsGameOver = false;
 	CollectedItems = 0;
 	ElapsedTime = 0.f;
 
-	// Spawn the HUD so the player sees item count, timer, and score from frame 1
 	SpawnHUD();
 }
 
@@ -60,19 +48,12 @@ void AStealAndEscapeGameMode::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	// Only advance the timer while the game is actively being played
 	if (!bIsGameOver)
 	{
 		ElapsedTime += DeltaTime;
 	}
 }
 
-/* Score formula:
-     item bonus = CollectedItems * 1000
-     time bonus = 1000 if ElapsedTime <= 30s
-                  otherwise max(0, 1000 - (ElapsedTime - 30) * 2)
-     total = item bonus + time bonus
-   Score is always non-negative. */
 int32 AStealAndEscapeGameMode::CalculateScore() const
 {
 	int32 ItemBonus = CollectedItems * 1000;
@@ -92,7 +73,7 @@ int32 AStealAndEscapeGameMode::CalculateScore() const
 	return ItemBonus + TimeBonus;
 }
 
-/* This is our Lose Condition */
+/* Lose Condition */
 void AStealAndEscapeGameMode::OnPlayerCaught()
 {
 	if (bIsGameOver) return;
@@ -100,6 +81,12 @@ void AStealAndEscapeGameMode::OnPlayerCaught()
 	bIsGameOver = true;
 
 	UE_LOG(LogTemp, Warning, TEXT("GAME OVER - Player was caught by guard!"));
+
+	// Play lose sound
+	if (LoseSound)
+	{
+		UGameplayStatics::PlaySound2D(GetWorld(), LoseSound);
+	}
 
 	APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0);
 	if (PC)
@@ -113,14 +100,12 @@ void AStealAndEscapeGameMode::OnPlayerCaught()
 		}
 	}
 
-	// Remove the HUD so it does not clutter the end screen
 	if (HUDInstance)
 	{
 		HUDInstance->RemoveFromParent();
 		HUDInstance = nullptr;
 	}
 
-	// Spawn end screen - LOSE gets time but no score
 	UEndScreenWidget* EndScreen = SpawnEndScreen();
 	if (EndScreen)
 	{
@@ -130,7 +115,7 @@ void AStealAndEscapeGameMode::OnPlayerCaught()
 	UGameplayStatics::SetGamePaused(GetWorld(), true);
 }
 
-/* This is the Win Condition */
+/* Win Condition */
 void AStealAndEscapeGameMode::OnPlayerReachedExit()
 {
 	if (bIsGameOver) return;
@@ -152,6 +137,12 @@ void AStealAndEscapeGameMode::OnPlayerReachedExit()
 	UE_LOG(LogTemp, Warning, TEXT("YOU WIN - Escaped with all items! Score: %d, Time: %.1fs"),
 		FinalScore, ElapsedTime);
 
+	// Play win sound
+	if (WinSound)
+	{
+		UGameplayStatics::PlaySound2D(GetWorld(), WinSound);
+	}
+
 	APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0);
 	if (PC)
 	{
@@ -164,14 +155,12 @@ void AStealAndEscapeGameMode::OnPlayerReachedExit()
 		}
 	}
 
-	// Remove HUD on win
 	if (HUDInstance)
 	{
 		HUDInstance->RemoveFromParent();
 		HUDInstance = nullptr;
 	}
 
-	// Spawn end screen - WIN gets time and score
 	UEndScreenWidget* EndScreen = SpawnEndScreen();
 	if (EndScreen)
 	{
@@ -187,6 +176,12 @@ void AStealAndEscapeGameMode::OnItemCollected()
 	CollectedItems++;
 	UE_LOG(LogTemp, Warning, TEXT("Item collected: %d / %d"), CollectedItems, RequiredItems);
 
+	// Play item pickup sound
+	if (ItemPickupSound)
+	{
+		UGameplayStatics::PlaySound2D(GetWorld(), ItemPickupSound);
+	}
+
 	if (GEngine)
 	{
 		GEngine->AddOnScreenDebugMessage(2, 2.0f, FColor::Cyan,
@@ -199,7 +194,6 @@ bool AStealAndEscapeGameMode::HasCollectedAllItems() const
 	return CollectedItems >= RequiredItems;
 }
 
-/* Spawns end screen widget */
 UEndScreenWidget* AStealAndEscapeGameMode::SpawnEndScreen()
 {
 	if (!EndScreenWidgetClass)
@@ -225,7 +219,6 @@ UEndScreenWidget* AStealAndEscapeGameMode::SpawnEndScreen()
 	return EndScreenInstance;
 }
 
-/* Spawns HUD widget */
 void AStealAndEscapeGameMode::SpawnHUD()
 {
 	if (!HUDWidgetClass)

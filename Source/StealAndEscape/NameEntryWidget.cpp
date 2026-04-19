@@ -3,11 +3,7 @@ Project Name: Steal and Escape: A 3D top-down semi-escape stealth game developed
 Course: CSCI 491 Seminar
 File Name: NameEntryWidget.cpp
 Author: Kushal Poudel and Alok Poudel
-Last Modified: April 18, 2026
-
-Description: Implementation of the name entry popup. On Submit it loads the
-             existing leaderboard save (or creates a new one), inserts the
-             new entry, and writes the save back to disk.
+Last Modified: April 19, 2026
 */
 
 #include "NameEntryWidget.h"
@@ -44,6 +40,8 @@ void UNameEntryWidget::ConfigureForScore(FName InLevelName, int32 InScore, float
 
 void UNameEntryWidget::OnSubmitClicked()
 {
+	PlayClickSound();
+
 	FString TypedName;
 	if (Input_PlayerName)
 	{
@@ -91,5 +89,14 @@ void UNameEntryWidget::OnSubmitClicked()
 
 void UNameEntryWidget::OnCancelClicked()
 {
+	PlayClickSound();
 	RemoveFromParent();
+}
+
+void UNameEntryWidget::PlayClickSound()
+{
+	if (ButtonClickSound)
+	{
+		UGameplayStatics::PlaySound2D(GetWorld(), ButtonClickSound);
+	}
 }
