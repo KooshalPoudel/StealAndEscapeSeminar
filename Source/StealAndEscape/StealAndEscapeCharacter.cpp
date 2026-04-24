@@ -64,6 +64,10 @@ AStealAndEscapeCharacter::AStealAndEscapeCharacter()
 	CameraBoom->SetRelativeRotation(FRotator(-60.f, 0.f, 0.f));
 	CameraBoom->bDoCollisionTest = false;
 
+	//remove this cameraboon line if you do not like the camera angle
+	// Shift camera target forward so player appears slightly lower/back on screen
+	CameraBoom->TargetOffset = FVector(250.f, 0.f, 0.f);
+
 	// Create camera
 	TopDownCameraComponent = CreateDefaultSubobject<UCameraComponent>(TEXT("TopDownCamera"));
 	TopDownCameraComponent->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);

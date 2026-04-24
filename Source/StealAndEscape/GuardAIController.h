@@ -43,6 +43,9 @@ class STEALANDESCAPE_API AGuardAIController : public AAIController
 public:
 	AGuardAIController();
 
+	UFUNCTION(BlueprintCallable, Category = "Guard")
+		void ResetToPatrol();
+
 protected:
     //this is called by the engine when this controller takes control of a pawn
 	virtual void OnPossess(APawn* InPawn) override;

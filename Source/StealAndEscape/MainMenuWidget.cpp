@@ -3,10 +3,13 @@ Project Name: Steal and Escape: A 3D top-down semi-escape stealth game developed
 Course: CSCI 491 Seminar
 File Name: MainMenuWidget.cpp
 Author: Kushal Poudel and Alok Poudel
-Last Modified: April 19, 2026
+Last Modified: April 24, 2026
 
 Description: Main menu implementation with leaderboard, button click sounds,
-             and working master volume slider that controls Ambient Sound actors.
+			 and working master volume slider that controls Ambient Sound actors.
+
+Updated: Added Tutorial button binding and handler. OnTutorialClicked launches
+		 the level specified by TutorialLevelName directly (skips level select).
 */
 
 #include "MainMenuWidget.h"
@@ -32,6 +35,7 @@ void UMainMenuWidget::NativeConstruct()
 	Super::NativeConstruct();
 
 	if (Btn_Play)         Btn_Play->OnClicked.AddDynamic(this, &UMainMenuWidget::OnPlayClicked);
+	if (Btn_Tutorial)     Btn_Tutorial->OnClicked.AddDynamic(this, &UMainMenuWidget::OnTutorialClicked);
 	if (Btn_Leaderboard)  Btn_Leaderboard->OnClicked.AddDynamic(this, &UMainMenuWidget::OnLeaderboardClicked);
 	if (Btn_Options)      Btn_Options->OnClicked.AddDynamic(this, &UMainMenuWidget::OnOptionsClicked);
 	if (Btn_Credits)      Btn_Credits->OnClicked.AddDynamic(this, &UMainMenuWidget::OnCreditsClicked);
@@ -61,7 +65,16 @@ void UMainMenuWidget::NativeConstruct()
    MAIN PANEL
    ============================================================================= */
 
-void UMainMenuWidget::OnPlayClicked()         { PlayClickSound(); ShowPanel(Panel_LevelSelect); }
+void UMainMenuWidget::OnPlayClicked() { PlayClickSound(); ShowPanel(Panel_LevelSelect); }
+
+/* Tutorial button skips the level select panel and launches the tutorial
+   level directly. If the player wants the main levels they go through Play.
+*/
+void UMainMenuWidget::OnTutorialClicked()
+{
+	PlayClickSound();
+	LaunchLevel(TutorialLevelName);
+}
 
 void UMainMenuWidget::OnLeaderboardClicked()
 {
@@ -70,8 +83,8 @@ void UMainMenuWidget::OnLeaderboardClicked()
 	ShowPanel(Panel_Leaderboard);
 }
 
-void UMainMenuWidget::OnOptionsClicked()      { PlayClickSound(); ShowPanel(Panel_Options); }
-void UMainMenuWidget::OnCreditsClicked()      { PlayClickSound(); ShowPanel(Panel_Credits); }
+void UMainMenuWidget::OnOptionsClicked() { PlayClickSound(); ShowPanel(Panel_Options); }
+void UMainMenuWidget::OnCreditsClicked() { PlayClickSound(); ShowPanel(Panel_Credits); }
 
 void UMainMenuWidget::OnQuitClicked()
 {
@@ -84,9 +97,9 @@ void UMainMenuWidget::OnQuitClicked()
    LEVEL SELECT
    ============================================================================= */
 
-void UMainMenuWidget::OnLevel1Clicked()          { PlayClickSound(); LaunchLevel(Level1Name); }
-void UMainMenuWidget::OnLevel2Clicked()          { PlayClickSound(); LaunchLevel(Level2Name); }
-void UMainMenuWidget::OnLevel3Clicked()          { PlayClickSound(); LaunchLevel(Level3Name); }
+void UMainMenuWidget::OnLevel1Clicked() { PlayClickSound(); LaunchLevel(Level1Name); }
+void UMainMenuWidget::OnLevel2Clicked() { PlayClickSound(); LaunchLevel(Level2Name); }
+void UMainMenuWidget::OnLevel3Clicked() { PlayClickSound(); LaunchLevel(Level3Name); }
 void UMainMenuWidget::OnLevelSelectBackClicked() { PlayClickSound(); ShowPanel(Panel_Main); }
 
 /* =============================================================================

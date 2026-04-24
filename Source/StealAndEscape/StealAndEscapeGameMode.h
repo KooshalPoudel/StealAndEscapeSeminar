@@ -30,13 +30,13 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 	UFUNCTION(BlueprintCallable, Category = "GameState")
-		void OnPlayerCaught();
+		virtual void OnPlayerCaught();
 
 	UFUNCTION(BlueprintCallable, Category = "GameState")
 		void OnPlayerReachedExit();
 
 	UFUNCTION(BlueprintCallable, Category = "GameState")
-		void OnItemCollected();
+		virtual void OnItemCollected();
 
 	UFUNCTION(BlueprintCallable, Category = "GameState")
 		bool HasCollectedAllItems() const;

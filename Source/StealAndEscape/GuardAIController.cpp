@@ -291,3 +291,12 @@ void AGuardAIController::ReturnToPatrol()
 	bIsWaiting = false;
 	MoveToNextPatrolPoint();
 }
+
+void AGuardAIController::ResetToPatrol()
+{
+	GetWorld()->GetTimerManager().ClearTimer(PatrolWaitTimerHandle);
+	bIsWaiting = false;
+	bHasCaughtPlayer = false;
+	StopMovement();
+	ReturnToPatrol();
+}

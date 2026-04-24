@@ -3,10 +3,13 @@ Project Name: Steal and Escape: A 3D top-down semi-escape stealth game developed
 Course: CSCI 491 Seminar
 File Name: MainMenuWidget.h
 Author: Kushal Poudel and Alok Poudel
-Last Modified: April 19, 2026
+Last Modified: April 24, 2026
 
 Description: Main menu widget with leaderboard, button click sounds, and
-             working master volume slider.
+			 working master volume slider.
+
+Updated: Added Btn_Tutorial button and OnTutorialClicked handler. When
+		 clicked, loads the TutorialLevel (configurable via TutorialLevelName).
 */
 
 #pragma once
@@ -32,6 +35,7 @@ public:
 
 protected:
 	UPROPERTY(meta = (BindWidget)) UButton* Btn_Play;
+	UPROPERTY(meta = (BindWidget)) UButton* Btn_Tutorial;
 	UPROPERTY(meta = (BindWidget)) UButton* Btn_Leaderboard;
 	UPROPERTY(meta = (BindWidget)) UButton* Btn_Options;
 	UPROPERTY(meta = (BindWidget)) UButton* Btn_Credits;
@@ -61,6 +65,12 @@ protected:
 
 	UPROPERTY(meta = (BindWidget)) UButton* Btn_CreditsBack;
 
+	/* Level that the Tutorial button loads.
+	   Default value is TutorialLevel which should match the filename of
+	   the tutorial level asset in Content/TopDownCPP/Maps/. If your tutorial
+	   level has a different name, change this in BP_MainMenuWidget class defaults.
+	*/
+	UPROPERTY(EditDefaultsOnly, Category = "Levels") FName TutorialLevelName = TEXT("TutorialLevel");
 	UPROPERTY(EditDefaultsOnly, Category = "Levels") FName Level1Name = TEXT("Level01");
 	UPROPERTY(EditDefaultsOnly, Category = "Levels") FName Level2Name = TEXT("Level02");
 	UPROPERTY(EditDefaultsOnly, Category = "Levels") FName Level3Name = TEXT("Level03");
@@ -73,6 +83,7 @@ protected:
 
 private:
 	UFUNCTION() void OnPlayClicked();
+	UFUNCTION() void OnTutorialClicked();
 	UFUNCTION() void OnLeaderboardClicked();
 	UFUNCTION() void OnOptionsClicked();
 	UFUNCTION() void OnCreditsClicked();
