@@ -68,14 +68,6 @@ void AStealableItem::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// Making sure that StealableItem spawned and checking collision state 
-	if (GEngine)
-	{
-		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Orange,
-			FString::Printf(TEXT("StealableItem spawned: %s"), *GetName()));
-	}
-	UE_LOG(LogTemp, Warning, TEXT("StealableItem BeginPlay: %s"), *GetName());
-
 	// Here we are Checking if CollisionSphere is valid before binding
 	if (CollisionSphere)
 	{
@@ -84,17 +76,9 @@ void AStealableItem::BeginPlay()
 		 After that End removes this item from the player's candidate list*/
 		CollisionSphere->OnComponentBeginOverlap.AddDynamic(this, &AStealableItem::OnOverlapBegin);
 		CollisionSphere->OnComponentEndOverlap.AddDynamic(this, &AStealableItem::OnOverlapEnd);
-
-		/* Debuging: Logging the collision state so we can verify it is set up correctly */
-		UE_LOG(LogTemp, Warning, TEXT("StealableItem %s - Overlap events enabled: %s, Collision enabled: %d, Sphere radius: %.1f"),
-			*GetName(),
-			CollisionSphere->GetGenerateOverlapEvents() ? TEXT("YES") : TEXT("NO"),
-			(int32)CollisionSphere->GetCollisionEnabled(),
-			CollisionSphere->GetScaledSphereRadius());
 	}
 	else
 	{
-		UE_LOG(LogTemp, Error, TEXT("StealableItem %s - CollisionSphere is NULL!"), *GetName());
 		if (GEngine)
 		{
 			GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Red,
@@ -117,12 +101,10 @@ void AStealableItem::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor*
 	AStealAndEscapeCharacter* Player = Cast<AStealAndEscapeCharacter>(OtherActor);
 	if (!Player) return;
 
-	UE_LOG(LogTemp, Warning, TEXT("StealableItem %s - Player entered grab range"), *GetName());
-
 	if (GEngine)
 	{
 		GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Yellow,
-			FString::Printf(TEXT("Near item: %s (Press G to grab)"), *GetName()));
+			TEXT("Near a collectible item (Press G to grab)"));
 	}
 
 	// Adding this item to the player's candidate list
@@ -140,8 +122,6 @@ void AStealableItem::OnOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* O
 	AStealAndEscapeCharacter* Player = Cast<AStealAndEscapeCharacter>(OtherActor);
 	if (!Player) return;
 
-	UE_LOG(LogTemp, Warning, TEXT("StealableItem %s - Player left grab range"), *GetName());
-
 	// Remove this item from the player's candidate list
 	Player->RemoveNearbyItem(this);
 }
@@ -153,12 +133,10 @@ void AStealableItem::OnOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* O
 */
 void AStealableItem::CollectItem()
 {
-	UE_LOG(LogTemp, Warning, TEXT("StealableItem %s - Collected by player grab!"), *GetName());
-
 	if (GEngine)
 	{
 		GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Green,
-			FString::Printf(TEXT("Grabbed item: %s"), *GetName()));
+			TEXT("Item collected"));
 	}
 
 	// Getting the GameMode to notify it that an item was collected
@@ -170,7 +148,6 @@ void AStealableItem::CollectItem()
 	}
 	else
 	{
-		UE_LOG(LogTemp, Error, TEXT("StealableItem - CollectItem FAILED: GameMode cast failed! Check World Settings GameMode Override"));
 		if (GEngine)
 		{
 			GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red,

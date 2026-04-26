@@ -159,7 +159,6 @@ void AStealAndEscapeCharacter::GrabPressed()
 	// Only allow grab if there is at least one nearby item to pick up
 	if (!HasNearbyItems())
 	{
-		UE_LOG(LogTemp, Warning, TEXT("GrabPressed - No nearby items to grab"));
 		return;
 	}
 
@@ -182,8 +181,6 @@ void AStealAndEscapeCharacter::GrabPressed()
 	//not to restart if already playing
 	if (!AnimInstance->Montage_IsPlaying(GrabMontage))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("GrabPressed - Playing grab animation (%d items in range)"),
-			NearbyItems.Num());
 		PlayAnimMontage(GrabMontage);
 	}
 }
@@ -202,11 +199,8 @@ void AStealAndEscapeCharacter::CollectNearbyItem()
 
 	if (!ClosestItem)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("CollectNearbyItem - No nearby items (walked away during animation)"));
 		return;
 	}
-
-	UE_LOG(LogTemp, Warning, TEXT("CollectNearbyItem - Collecting closest item: %s"), *ClosestItem->GetName());
 
 	// Remove from the candidate list BEFORE calling CollectItem because CollectItem
 	// calls Destroy and we do not want a dangling pointer in the array
@@ -225,9 +219,6 @@ void AStealAndEscapeCharacter::AddNearbyItem(AStealableItem* Item)
 	if (!Item) return;
 
 	NearbyItems.AddUnique(Item);
-
-	UE_LOG(LogTemp, Warning, TEXT("AddNearbyItem - Added: %s (total candidates: %d)"),
-		*Item->GetName(), NearbyItems.Num());
 }
 
 /* RemoveNearbyItem - Called by StealableItem OnOverlapEnd
@@ -239,9 +230,6 @@ void AStealAndEscapeCharacter::RemoveNearbyItem(AStealableItem* Item)
 	if (!Item) return;
 
 	NearbyItems.Remove(Item);
-
-	UE_LOG(LogTemp, Warning, TEXT("RemoveNearbyItem - Removed: %s (total candidates: %d)"),
-		*Item->GetName(), NearbyItems.Num());
 }
 
 /* HasNearbyItems - Returns true if the candidate list is not empty

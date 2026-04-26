@@ -97,7 +97,6 @@ void ATutorialGameMode::Tick(float DeltaTime)
 
 		if (bGuardChasingNow && !bGuardChaseActive)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Tutorial - Guard chase started (step %d)"), CurrentStepIndex);
 			bGuardChaseActive = true;
 			if (TutorialWidgetInstance)
 			{
@@ -107,7 +106,6 @@ void ATutorialGameMode::Tick(float DeltaTime)
 		}
 		else if (!bGuardChasingNow && bGuardChaseActive)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Tutorial - Guard chase ended (step %d)"), CurrentStepIndex);
 			bGuardChaseActive = false;
 			ShowCurrentStepMessage();
 		}
@@ -167,7 +165,6 @@ void ATutorialGameMode::Tick(float DeltaTime)
 			HideTimeAccumulated += DeltaTime;
 			if (HideTimeAccumulated >= HideDurationRequired)
 			{
-				UE_LOG(LogTemp, Warning, TEXT("Tutorial - Player escaped guard"));
 				CompleteCurrentStep();
 			}
 		}
@@ -175,7 +172,6 @@ void ATutorialGameMode::Tick(float DeltaTime)
 		{
 			if (EscapeStepActiveTime >= EscapeGuardGracePeriod)
 			{
-				UE_LOG(LogTemp, Warning, TEXT("Tutorial - EscapeGuard grace period expired"));
 				CompleteCurrentStep();
 			}
 		}
@@ -213,7 +209,6 @@ void ATutorialGameMode::FreezeGuards()
 		}
 	}
 
-	UE_LOG(LogTemp, Warning, TEXT("Tutorial - Guards frozen"));
 }
 
 /* Wakes guards up - restores their patrol speed and sends them back to
@@ -241,7 +236,6 @@ void ATutorialGameMode::ActivateGuards()
 		}
 	}
 
-	UE_LOG(LogTemp, Warning, TEXT("Tutorial - Guards activated"));
 }
 
 /* Disables the player's input so they can't move/act during messages. */
@@ -319,7 +313,6 @@ void ATutorialGameMode::CompleteCurrentStep()
 		LastCheckpointTransform = PlayerChar->GetActorTransform();
 	}
 
-	UE_LOG(LogTemp, Warning, TEXT("Tutorial - Completed step %d"), CurrentStepIndex);
 
 	bIsBeingChased = false;
 	HideTimeAccumulated = 0.f;
@@ -362,7 +355,6 @@ void ATutorialGameMode::CompleteCurrentStep()
 
 void ATutorialGameMode::AdvanceToNextStep()
 {
-	UE_LOG(LogTemp, Warning, TEXT("Tutorial - AdvanceToNextStep fired"));
 
 	bShowingInterstitialMessage = false;
 	CurrentStepIndex++;
@@ -371,7 +363,6 @@ void ATutorialGameMode::AdvanceToNextStep()
 
 	if (CurrentStepIndex >= StepTriggers.Num())
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Tutorial - All steps complete"));
 		if (TutorialWidgetInstance)
 		{
 			TutorialWidgetInstance->SetMessage(TEXT("Tutorial complete!"));
@@ -399,7 +390,6 @@ void ATutorialGameMode::OnEnterStep()
 				Current->StepType == ETutorialStepType::GrabItem) &&
 				HasCollectedAllItems())
 			{
-				UE_LOG(LogTemp, Warning, TEXT("Tutorial - Step %d obsolete, showing transition"), CurrentStepIndex);
 
 				if (TutorialWidgetInstance)
 				{
@@ -431,7 +421,6 @@ void ATutorialGameMode::OnEnterStep()
 
 void ATutorialGameMode::OnPlayerCaught()
 {
-	UE_LOG(LogTemp, Warning, TEXT("Tutorial - OnPlayerCaught called at step %d"), CurrentStepIndex);
 
 	if (GetWorld()->GetTimerManager().IsTimerActive(CaughtTeleportTimerHandle))
 	{
@@ -474,7 +463,6 @@ void ATutorialGameMode::OnPlayerCaught()
 
 void ATutorialGameMode::PerformCaughtTeleport()
 {
-	UE_LOG(LogTemp, Warning, TEXT("Tutorial - PerformCaughtTeleport fired for step %d"), CurrentStepIndex);
 
 	bShowingInterstitialMessage = false;
 
@@ -558,7 +546,6 @@ bool ATutorialGameMode::SkipObsoleteSteps()
 			HasCollectedAllItems())
 		{
 			bObsolete = true;
-			UE_LOG(LogTemp, Warning, TEXT("Tutorial - Skipping obsolete step %d"), CurrentStepIndex);
 		}
 
 		if (!bObsolete) break;
@@ -600,7 +587,6 @@ void ATutorialGameMode::GatherStepTriggers()
 			return A.StepIndex < B.StepIndex;
 		});
 
-	UE_LOG(LogTemp, Warning, TEXT("Tutorial - Found %d step triggers"), StepTriggers.Num());
 }
 
 void ATutorialGameMode::UpdateStepTriggerActivation()
@@ -617,7 +603,6 @@ void ATutorialGameMode::ShowCurrentStepMessage()
 {
 	if (!StepTriggers.IsValidIndex(CurrentStepIndex))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Tutorial - invalid step index %d"), CurrentStepIndex);
 		return;
 	}
 
@@ -625,7 +610,6 @@ void ATutorialGameMode::ShowCurrentStepMessage()
 	if (!Current) return;
 
 	const FString& Msg = Current->StepMessage;
-	UE_LOG(LogTemp, Warning, TEXT("Tutorial - ShowCurrentStepMessage step %d: %s"), CurrentStepIndex, *Msg);
 
 	if (TutorialWidgetInstance)
 	{

@@ -79,9 +79,6 @@ void AExitZone::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* Othe
 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex,
 	bool bFromSweep, const FHitResult& SweepResult)
 {
-	//Making sure player reached exit zone, testing for overlap 
-	UE_LOG(LogTemp, Warning, TEXT("Player reached exit")); 
-
 	// Checking to makesure theotheractor is not null, if so it crashes 
 	if (!OtherActor) return;
 

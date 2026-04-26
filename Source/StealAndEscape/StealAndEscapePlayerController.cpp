@@ -173,7 +173,6 @@ void AStealAndEscapePlayerController::OpenPauseMenu()
 	// defaults there is nothing we can show
 	if (!PauseMenuWidgetClass)
 	{
-		UE_LOG(LogTemp, Error, TEXT("StealAndEscapePlayerController - PauseMenuWidgetClass is not set! Assign it on BP_StealAndEscapePlayerController defaults."));
 		return;
 	}
 

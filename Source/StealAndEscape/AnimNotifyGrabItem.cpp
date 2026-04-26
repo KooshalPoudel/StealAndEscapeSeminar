@@ -42,14 +42,8 @@ void UAnimNotifyGrabItem::Notify(USkeletalMeshComponent* MeshComp, UAnimSequence
 	// Casting to our player character class to call CollectNearbyItem
 	AStealAndEscapeCharacter* Player = Cast<AStealAndEscapeCharacter>(Owner);
 	if (Player)
-	{ 
-		//testing to make sure that notifiy is fired or not -- debug
-		UE_LOG(LogTemp, Warning, TEXT("AnimNotifyGrabItem - Notify fired! Calling CollectNearbyItem"));
+	{
 		// This finds the closest candidate item and tells it to collect itself
 		Player->CollectNearbyItem();
-	}
-	else
-	{
-		UE_LOG(LogTemp, Warning, TEXT("AnimNotifyGrabItem - Cast to player failed"));
 	}
 }

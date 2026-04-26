@@ -27,7 +27,6 @@ void AMainMenuPlayerController::BeginPlay()
 	// Safety check so we do not crash if the widget class was never assigned
 	if (!MainMenuWidgetClass)
 	{
-		UE_LOG(LogTemp, Error, TEXT("MainMenuPlayerController - MainMenuWidgetClass not set! Assign it on the PlayerController Blueprint defaults."));
 		return;
 	}
 

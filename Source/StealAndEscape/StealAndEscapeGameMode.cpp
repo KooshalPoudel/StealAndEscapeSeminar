@@ -80,8 +80,6 @@ void AStealAndEscapeGameMode::OnPlayerCaught()
 
 	bIsGameOver = true;
 
-	UE_LOG(LogTemp, Warning, TEXT("GAME OVER - Player was caught by guard!"));
-
 	// Play lose sound
 	if (LoseSound)
 	{
@@ -122,7 +120,6 @@ void AStealAndEscapeGameMode::OnPlayerReachedExit()
 
 	if (!HasCollectedAllItems())
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Cannot exit - Collect all items first! (%d / %d)"), CollectedItems, RequiredItems);
 		if (GEngine)
 		{
 			GEngine->AddOnScreenDebugMessage(1, 3.0f, FColor::Yellow,
@@ -134,8 +131,6 @@ void AStealAndEscapeGameMode::OnPlayerReachedExit()
 	bIsGameOver = true;
 
 	int32 FinalScore = CalculateScore();
-	UE_LOG(LogTemp, Warning, TEXT("YOU WIN - Escaped with all items! Score: %d, Time: %.1fs"),
-		FinalScore, ElapsedTime);
 
 	// Play win sound
 	if (WinSound)
@@ -174,7 +169,6 @@ void AStealAndEscapeGameMode::OnPlayerReachedExit()
 void AStealAndEscapeGameMode::OnItemCollected()
 {
 	CollectedItems++;
-	UE_LOG(LogTemp, Warning, TEXT("Item collected: %d / %d"), CollectedItems, RequiredItems);
 
 	// Play item pickup sound
 	if (ItemPickupSound)
@@ -198,7 +192,6 @@ UEndScreenWidget* AStealAndEscapeGameMode::SpawnEndScreen()
 {
 	if (!EndScreenWidgetClass)
 	{
-		UE_LOG(LogTemp, Error, TEXT("StealAndEscapeGameMode - EndScreenWidgetClass is not set!"));
 		return nullptr;
 	}
 
@@ -223,7 +216,6 @@ void AStealAndEscapeGameMode::SpawnHUD()
 {
 	if (!HUDWidgetClass)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("StealAndEscapeGameMode - HUDWidgetClass is not set. Skipping HUD spawn."));
 		return;
 	}
 

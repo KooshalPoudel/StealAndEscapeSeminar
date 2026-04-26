@@ -65,7 +65,6 @@ void UNameEntryWidget::OnSubmitClicked()
 	}
 	if (!Leaderboard)
 	{
-		UE_LOG(LogTemp, Error, TEXT("NameEntryWidget - Could not create or load leaderboard save!"));
 		RemoveFromParent();
 		return;
 	}
@@ -77,12 +76,9 @@ void UNameEntryWidget::OnSubmitClicked()
 	NewEntry.ItemsCollected = ItemsCollected;
 	NewEntry.DateString = FDateTime::Now().ToString(TEXT("%Y-%m-%d %H:%M"));
 
-	int32 Rank = Leaderboard->AddEntry(LevelName, NewEntry);
+	Leaderboard->AddEntry(LevelName, NewEntry);
 
 	UGameplayStatics::SaveGameToSlot(Leaderboard, ULeaderboardSaveGame::SlotName, 0);
-
-	UE_LOG(LogTemp, Log, TEXT("NameEntryWidget - Submitted score %d for %s at rank %d"),
-		Score, *TypedName, Rank);
 
 	RemoveFromParent();
 }
