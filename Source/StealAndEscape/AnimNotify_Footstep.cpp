@@ -3,7 +3,7 @@ Project Name: Steal and Escape
 Description: A 3D top-down stealth escape game developed in Unreal Engine 
 File Name: AnimNotify_Footstep.cpp
 Author: Alok Poudel, Kushal Poudel 
-Last Modified: March 22, 2026
+Last Modified: April 26, 2026
 Description: In this class we are implementing  a custom animation notifiy which triggers
              Footstep noise event. In the running animation when the foot reasches ground. 
 			 The footstep sound plays and after that this event is triggered which reports a

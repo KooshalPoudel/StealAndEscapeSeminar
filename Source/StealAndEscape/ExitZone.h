@@ -3,7 +3,7 @@ Project Name: Steal and Escape: A 3D top-down semi-escape stealth game developed
 Course: CSCI 491 Seminar
 File Name: ExitZone.h
 Author: Kushal Poudel 
-Last Modified: March 22, 2026
+Last Modified: April 26, 2026
 Description: Header file for the ExitZone actor which is used as the win condition trigger.
 */
 

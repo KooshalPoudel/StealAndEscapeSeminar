@@ -3,17 +3,17 @@ Project Name: Steal and Escape A 3D top-down stealth escape game developed in Un
 Course: CSCI 491 Seminar
 
 File Name: StealableItem.cpp
-Author: Kushal Poudel 
-Last Modified: March 22, 2026
+Author: Kushal Poudel
+Last Modified: April 26, 2026
 
-Description: 
+Description:
 Implementing stealableitem actor which is handling collectible objects.
 whenever the player char enters the sphere collison the item notifies gamemode
-to add the collected item count and the destroying itself form the world 
+to add the collected item count and the destroying itself form the world
 
 Static mesh component  here is providing visual representation of item.
 We will add this in unreal editor adjusting the size as well as adding VFX
-so that player know which item is intractable. 
+so that player know which item is intractable.
 
 Collsion sphere uses OverLabAllDynamic profile so it doesnot block the player
 but still generates overlap events . Also the collision is query only collison
@@ -30,7 +30,7 @@ which implies player can walk thorough it and the overlap event  handles pickup 
 #include "Engine/Engine.h"
 
 /*
-This is constructor for AStelableItem which is called in the runtime 
+This is constructor for AStelableItem which is called in the runtime
 as well as when the actor is first created
 */
 
@@ -38,9 +38,9 @@ AStealableItem::AStealableItem()
 {
 	PrimaryActorTick.bCanEverTick = false;
 
-	/*  
-	Setting up the first component which is collison sphere 
-	This is a invisible sphere that detectes when the player is colse enough 
+	/*
+	Setting up the first component which is collison sphere
+	This is a invisible sphere that detectes when the player is colse enough
 	we are reating the sphere collision component and registering it as a default subobject
 
 	Also some baisc collision settings are set, which we will change later from bueprint
@@ -53,7 +53,7 @@ AStealableItem::AStealableItem()
 	CollisionSphere->SetGenerateOverlapEvents(true);
 	RootComponent = CollisionSphere;
 
-	/* 
+	/*
 	Setting up second component which is a visible 3D item mesh that player can see
 	This is attached to the collision sphere so it moves with it
 	 The actual mesh will be assigned in the unreal engine
@@ -111,8 +111,8 @@ void AStealableItem::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor*
 	Player->AddNearbyItem(this);
 }
 
-/* OnOverlapEnd mean that  Player left the collison area 
-   if so Remove this from the player's candidate list so that player cannot garb it. 
+/* OnOverlapEnd mean that  Player left the collison area
+   if so Remove this from the player's candidate list so that player cannot garb it.
 */
 void AStealableItem::OnOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)

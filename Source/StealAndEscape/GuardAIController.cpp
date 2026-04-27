@@ -4,13 +4,13 @@ Description: A 3D top-down stealth / escape game developed in Unreal Engine 4.27
 Course: CSCI 491 Seminar
 File Name: GuardAIController.cpp
 Author: Alok Poudel & Kushal Poudel
-Last Modified: March 22, 2026
-Description: GuardAIController is responsible for controlling the enemy guard's behavior using Unreal Engine's AI Perception system, 
-             managing how the guard recognizes the player through sight and hearing and reacts using a three-state behavior machine. 
-			 In the Patrolling state the guard walks between waypoints set in the level editor and returns to the nearest patrol point 
-			 after losing the player. In the Chasing state the guard sprints toward the player when detected by sight, and when it gets 
-			 within CatchDistance it stops and calls GameMode->OnPlayerCaught() to trigger the lose condition, with the bHasCaughtPlayer 
-			 flag preventing this from firing multiple times. In the Investigating state the guard walks to the location of a heard noise 
+Last Modified: April 26, 2026
+Description: GuardAIController is responsible for controlling the enemy guard's behavior using Unreal Engine's AI Perception system,
+			 managing how the guard recognizes the player through sight and hearing and reacts using a three-state behavior machine.
+			 In the Patrolling state the guard walks between waypoints set in the level editor and returns to the nearest patrol point
+			 after losing the player. In the Chasing state the guard sprints toward the player when detected by sight, and when it gets
+			 within CatchDistance it stops and calls GameMode->OnPlayerCaught() to trigger the lose condition, with the bHasCaughtPlayer
+			 flag preventing this from firing multiple times. In the Investigating state the guard walks to the location of a heard noise
 			 and then returns to patrol.
 */
 #include "GuardAIController.h"
@@ -292,11 +292,34 @@ void AGuardAIController::ReturnToPatrol()
 	MoveToNextPatrolPoint();
 }
 
+/* ResetToPatrol is a full reset funtion which we use to bring the guard back to
+   a clean patrol state from anywhere. This is mostly used when the chase or
+   invesigation gets cancled , or when we need to manualy put the guard back to
+   its normal behavior from outside this class.
+
+   Firstly we clear the patrol wait timer so any pending wait that was set earlier
+   doesnot fire after the reset. Then bIsWaiting is set to false because the guard
+   is no longer waiting at any patrol point. After that we reset bHasCaughtPlayer
+   flag so the catch logic in tick can trigger again next time the player is caught
+   otherwise it would stay locked from the prevoius chase. Then StopMovement() is
+   called to immediatly stop whatever movement was going on i.e chasing or invetigating.
+   And finaly ReturnToPatrol() is called which finds the closest patrol point and
+   starts walking the guard back to normal patrol.
+*/
 void AGuardAIController::ResetToPatrol()
 {
+	// Clearing the patrol wait timer so it doesnot fire after we reset
 	GetWorld()->GetTimerManager().ClearTimer(PatrolWaitTimerHandle);
+
+	// Setting waiting flag to false because guard is not at any patrol point right now
 	bIsWaiting = false;
+
+	// Reseting the catch flag so catch logic can trigger again later
 	bHasCaughtPlayer = false;
+
+	// Stoping any current movement immediatly like chase or invetigation movement
 	StopMovement();
+
+	// Finaly calling ReturnToPatrol to find closest patrol point and start patroling again
 	ReturnToPatrol();
 }

@@ -4,7 +4,7 @@ Course: CSCI 491 Seminar
 
 File Name: GuardCharacter.h
 Author:Alok Poudel
-Last Modified: March 22, 2026
+Last Modified: April 26, 2026
 Description : Header file for custom AI Controlled Guard Character.
 This class defines the structure of the enemy guard which inherits from ACharacter.
 Actual AI behavior is implemented inside GuardAIController. patrol point array for waypoint-based patrol system.

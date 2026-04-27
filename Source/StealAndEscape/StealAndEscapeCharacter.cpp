@@ -1,26 +1,25 @@
 /*
-Project Name: Steal and Escape
-Description: A 3D top-down stealth / escape game developed in Unreal Engine 4.27
+Project Name: Steal and Escape A 3D top-down stealth semi escape game developed in Unreal Engine 
 Course: CSCI 491 Seminar
 Template Used: Unreal Engine 4 TopDown C++ Template (Epic Games)
 Original Template Author: Epic Games
 
 File Name: StealAndEscapeCharacter.cpp
 Modified By: Kushal Poudel and Alok Poudel
-Last Modified: March 18, 2026
+Last Modified: April 26, 2026
 
-Description: StealAndEscapeCharacter is the player character class based on Unreal Engine's 
-             Top-Down C++ template. The template-generated components including camera setup, 
-			 cursor decal logic, and click-to-move input are preserved as provided. Custom 
-			 gameplay features added for this project include WASD keyboard movement, sprint 
-			 functionality on the Shift key, adjustable WalkSpeed and RunSpeed variables, and 
-			 a grab system triggered by the G key. The grab system works through a candidate list 
-			 where any StealableItem that overlaps the player is added to a TArray of nearby items. 
-			 When the player presses G the GrabPressed() function checks if the list is non-empty 
-			 and plays a grab Animation Montage. At the hand-contact frame an Animation Notify calls 
-			 CollectNearbyItem() which picks the closest item from the candidate list, awards the score, 
-			 notifies the GameMode, and destroys the item. This approach correctly handles cases where 
-			 multiple items are in overlap range at the same time.
+Description: StealAndEscapeCharacter is the player character class which is based on Unreal Engine's
+			 Top-Down C++ template. The template generated components like camera setup, cursor decal
+			 logic and click-to-move input are kept as it is from the template. Custom gameplay features
+			 that we added for this project are WASD keyboard movement, sprint functionality on Shift key,
+			 adjustable WalkSpeed and RunSpeed variables and also a grab system trigerred with G key.
+			 The grab system works through a candidate list where any StealableItem that overlaps the
+			 player is added to a TArray of nearby items. When the player presses G the GrabPressed()
+			 funtion checks if the list is not empty and plays a grab Animation Montage. At the hand
+			 contact frame an Animation Notify calls CollectNearbyItem() which picks the closest item
+			 from the candidate list, awards the score, notifies the GameMode and destroys the item.
+			 This way it correctly handles the case where multiple items are in overlap range at the
+			 same time.
 */
 #include "StealAndEscapeCharacter.h"
 #include "StealableItem.h"
@@ -149,14 +148,15 @@ void AStealAndEscapeCharacter::StopRun()
 	GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
 }
 
-/* Custom Method for Grab functionality using G key Now checks if there are any candidate items in range before playing
-   the grab animation. If no items are nearby pressing G does nothing.
-   The actual item collection happens later when the animation notify fires
-   at the hand-contact frame through CollectNearbyItem()
+/* Custom Method for Grab functionality using G key. This now checks if there are any
+   candidate items in range before playing the grab animation. If no item is nearby
+   then pressing G does nothing.
+   The actual item collection happens later when the animation notify fires at the
+   hand contact frame through CollectNearbyItem() function -- kushal
 */
 void AStealAndEscapeCharacter::GrabPressed()
 {
-	// Only allow grab if there is at least one nearby item to pick up
+	// Only allow garb if there is at least one nearby item to pick up
 	if (!HasNearbyItems())
 	{
 		return;
@@ -185,16 +185,17 @@ void AStealAndEscapeCharacter::GrabPressed()
 	}
 }
 
-/* CollectNearbyItem - Called by AnimNotify_GrabItem at the hand-contact frame
-   This is the moment in the grab animation where the player's hand touches the item
-   We find the closest valid candidate item from the NearbyItems list and collect it
+/* CollectNearbyItem this is Called by AnimNotify_GrabItem at the hand contact frame
+   This is the moment in the grab animation where the player's hand touches the item.
+   Here we find the closest valid candidate item from the NearbyItems list and collect it.
    This handles the case where multiple items are in range by always picking the nearest one
-   It also handles the case where the player walked away during the animation
+   it also handles the case where the player walked away during the animation -- kushal
 */
 void AStealAndEscapeCharacter::CollectNearbyItem()
 {
-	// Find the closest item at the moment of collection
-	// The player may have moved during the animation so we check distance NOW
+	/* Find the closest item at the moment of collection
+	   The player may have moved during the animation so we check the distance NOW
+	*/
 	AStealableItem* ClosestItem = GetClosestNearbyItem();
 
 	if (!ClosestItem)
@@ -202,17 +203,18 @@ void AStealAndEscapeCharacter::CollectNearbyItem()
 		return;
 	}
 
-	// Remove from the candidate list BEFORE calling CollectItem because CollectItem
-	// calls Destroy and we do not want a dangling pointer in the array
+	/* Removing it form the candidate list BEFORE calling CollectItem because CollectItem
+	   calls Destroy and we donot want a dangling pointer in the array
+	*/
 	NearbyItems.Remove(ClosestItem);
 
-	// Tell the item to collect itself (notify GameMode and destroy)
+	// Telling the item to collect itself which then notifies GameMode and destroys itself
 	ClosestItem->CollectItem();
 }
 
-/* AddNearbyItem - Called by StealableItem OnOverlapBegin
-   Adds the item to the candidate list when the player enters its sphere collision
-   Uses AddUnique to prevent duplicate entries in case overlap fires twice
+/* AddNearbyItem this is Called by StealableItem OnOverlapBegin
+   Adds the item to the candidate list when the player enters its sphere collison
+   Uses AddUnique to prevent dupicate entries in case overlap fires twice -- kushal
 */
 void AStealAndEscapeCharacter::AddNearbyItem(AStealableItem* Item)
 {
@@ -221,9 +223,9 @@ void AStealAndEscapeCharacter::AddNearbyItem(AStealableItem* Item)
 	NearbyItems.AddUnique(Item);
 }
 
-/* RemoveNearbyItem - Called by StealableItem OnOverlapEnd
-   Removes the item from the candidate list when the player leaves its sphere collision
-   Safe to call even if the item is not in the list
+/* RemoveNearbyItem this is Called by StealableItem OnOverlapEnd
+   Removes the item from the candidate list when the player leaves its sphere collison
+   Safe to call even if the item is not in the list -- kushal
 */
 void AStealAndEscapeCharacter::RemoveNearbyItem(AStealableItem* Item)
 {
@@ -232,18 +234,18 @@ void AStealAndEscapeCharacter::RemoveNearbyItem(AStealableItem* Item)
 	NearbyItems.Remove(Item);
 }
 
-/* HasNearbyItems - Returns true if the candidate list is not empty
-   Used by GrabPressed to decide whether to play the grab animation
+/* HasNearbyItems  Returns true if the candidate list is not empty
+   This is used by GrabPressed to decide wheather to play the grab animation or not
 */
 bool AStealAndEscapeCharacter::HasNearbyItems() const
 {
 	return NearbyItems.Num() > 0;
 }
 
-/* GetClosestNearbyItem - Finds the closest item in the NearbyItems list
-   Compares squared distances from the player's current location to each candidate
-   Using DistSquared instead of Dist to avoid the square root calculation
-   Returns nullptr if the list is empty
+/* GetClosestNearbyItem  Finds the closest item in the NearbyItems list
+   It compares squared distances from the players current location to each candidate
+   We are using DistSquared instead of Dist to avoid the square root calculation
+   Returns nullptr if the list is empty -- kushal
 */
 AStealableItem* AStealAndEscapeCharacter::GetClosestNearbyItem() const
 {
@@ -272,14 +274,15 @@ AStealableItem* AStealAndEscapeCharacter::GetClosestNearbyItem() const
 }
 
 /* Custom Method for generating footstep noise for the AI hearing detection system
-   This function reports a noise event at the player's current location using UAISense_Hearing
-   The guard AI perception system picks up this noise and investigates the sound location
-   This is triggered from the animation notify on the running animation when foot hits ground
-   Loudness of 1.0 is the base volume and MaxRange of 0 means it uses the listener's HearingRange
+   This function reports a noise event at the players current location using UAISense_Hearing
+   The guard AI perception system  picks up this noise and investigate the sound location.
+   This is trigerred from the animation notify on the running animation when foot hits ground.
+   Loudness of 1.0 is the base volume and MaxRange of 0 means it uses the listeners HearingRange
+   -- kushal
 */
 void AStealAndEscapeCharacter::MakeFootstepNoise()
 {
-	// Reporting a noise event at the player's location so the guard AI can detect it
+	// Reporting a noise event at the players location so guard AI can detect it
 	MakeNoise(1.0f, this, GetActorLocation(), 0.0f, FName("Footstep"));
 }
 

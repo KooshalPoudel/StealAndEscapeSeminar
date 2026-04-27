@@ -3,8 +3,8 @@ Project Name: Steal and Escape: A 3D top-down semi-escape stealth game developed
 Course: CSCI 491 Seminar
 
 File Name: GuardCharacter.cpp
-Author:Alok Poudel 
-Last Modified: March 22, 2026
+Author:Alok Poudel
+Last Modified: April 26, 2026
 
 Description : This is for creating a custom Guard Character which is AI Controlled.
 The guard is controlled by GuardAIController and is automatically possessed when placed in the world.

@@ -3,7 +3,7 @@ Project Name: Steal and Escape: A 3D top-down semi-escape stealth game developed
 Course: CSCI 491 Seminar
 File Name: AnimNotifyGrabItem.h
 Author: Kushal Poudel 
-Last Modified: March 22, 2026
+Last Modified: April 26, 2026
 
 Description:  This is a header class Custom Animation Notify which triggers
               item collection with the help of grab animation montage.

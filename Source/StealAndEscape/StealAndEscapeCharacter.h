@@ -3,13 +3,16 @@ Project Name: Steal and Escape: A 3D top-down semi-escape stealth game developed
 Course: CSCI 491 Seminar
 Template Used: Unreal Engine 4 TopDown C++ Template (Epic Games)
 Original Template Author: Epic Games
+
 File Name: StealAndEscapeCharacter.h
 Modified By: Kushal Poudel and Alok Poudel
-Last Modified: March 18, 2026
-Description:StealAndEscapeCharacter is the player character header file based on Unreal Engine's 
-            Top-Down C++ template. 
+Last Modified: April 26, 2026
+
+Description:StealAndEscapeCharacter is the player character header file based on Unreal Engine's
+			Top-Down C++ template.
 */
 #pragma once
+
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "Animation/AnimMontage.h"
@@ -22,10 +25,14 @@ UCLASS(Blueprintable)
 class AStealAndEscapeCharacter : public ACharacter
 {
 	GENERATED_BODY()
+
 public:
 	AStealAndEscapeCharacter();
+
 	virtual void Tick(float DeltaSeconds) override;
+
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+
 	// Getters used by PlayerController Which are being used 
 	FORCEINLINE class UCameraComponent* GetTopDownCameraComponent() const { return TopDownCameraComponent; }
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
@@ -41,36 +48,53 @@ public:
 
 	// this is Called by StealableItem OnOverlapBegin
 	void AddNearbyItem(AStealableItem* Item);
-    void RemoveNearbyItem(AStealableItem* Item);
+
+	// this is Called by StealableItem OnOverlapEnd
+	void RemoveNearbyItem(AStealableItem* Item);
+
+	// returns true if there is atleast one item in the candidate list 
 	bool HasNearbyItems() const;
 
 protected:
 	// WASD movement -Alok
 	void MoveForward(float Value);
 	void MoveRight(float Value);
+
 	// Shift to run- Alok
 	void StartRun();
 	void StopRun();
+
 	//Grab (G key)  is pressed character plays Grab animation montage-- Kushal
 	void GrabPressed();
 
+	/* Grab Animation Montage which is set in the blueprint editor
+	   This montage is plyed when player presses G to grab item-- kushal
+	*/
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Animation", meta = (AllowPrivateAccess = "true"))
 		UAnimMontage* GrabMontage = nullptr;
+
 private:
+	/* Camera componenets from the topdown template, kept as it is from the template */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 		class UCameraComponent* TopDownCameraComponent;
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 		class USpringArmComponent* CameraBoom;
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 		class UDecalComponent* CursorToWorld;
+
+	/* Walk speed is the defult speed when player is just walking around -- Alok */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement", meta = (AllowPrivateAccess = "true"))
 		float WalkSpeed = 350.f;
 
+	/* Run speed is used when player holds shift to sprint -- Alok */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement", meta = (AllowPrivateAccess = "true"))
 		float RunSpeed = 600.f;
 
 	//this tracks all StealableItems currently overlapping the player
 	TArray<AStealableItem*> NearbyItems;
 
+	// helper funtion that loops thorough NearbyItems and returns the closest one to the player
 	AStealableItem* GetClosestNearbyItem() const;
 };

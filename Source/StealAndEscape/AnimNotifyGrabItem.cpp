@@ -4,7 +4,7 @@ Description: A 3D top-down stealth escape game developed in Unreal Engine
 Course: CSCI 491 Seminar
 File Name: AnimNotifyGrabItem.cpp
 Author: Kushal Poudel 
-Last Modified: March 22, 2026
+Last Modified: April 26, 2026
 
 Description: This is a class where we implemented another animation notify for grabbing an item.
              We added animation notify in grab item montage in such a way that when the player 

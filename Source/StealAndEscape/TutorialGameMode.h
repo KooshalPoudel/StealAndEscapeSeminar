@@ -1,22 +1,22 @@
 /*
 Project Name: Steal and Escape: A 3D top-down semi-escape stealth game developed in Unreal Engine
 Course: CSCI 491 Seminar
+
 File Name: TutorialGameMode.h
 Author: Kushal Poudel and Alok Poudel
-Last Modified: April 24, 2026
+Last Modified: April 26, 2026
 
-Description: Tutorial GameMode inheriting from StealAndEscapeGameMode.
-
-Key design: the tutorial ENFORCES step order using three mechanisms:
-  1. Player input is disabled during success/caught/transition messages
-	 so the player cannot move during the 1.5 second delays.
-  2. Guards are disabled (frozen at spawn, no chase, no patrol) during the
-	 movement-teaching steps (0-4). They only "wake up" when the player
-	 reaches step 5 (the guard warning). This prevents the guard from
-	 chasing during the W/A/S/D tutorial.
-  3. The player's input is disabled BEFORE each step starts and RE-enabled
-	 only after the step message has been shown. This guarantees the
-	 player sees every step's instructions.
+Description: Tutorial GameMode inheriting from StealAndEscapeGameMode . The tutorial enforces
+			 step order using three mechanisms:
+			   a. Player input is disabled durring success/caught/transition messages so the
+				  player cant move during the 1.5 second delays.
+			   b. Guards are disabled (frozen at spawn , no chase , no patrol) during the
+				  movement teaching steps (0 to 4) . They only wake up when the player reaches
+				  step 5 which is the guard warning step . This prevents the guard from chasing
+				  during the W/A/S/D tutorial.
+			   c. Player input is disabled BEFORE each step starts and re-enabled only after the
+				  step message has been shown . This gaurantees the player sees every step's
+				  instructions.
 */
 
 #pragma once
@@ -30,6 +30,7 @@ class UTutorialWidget;
 class USoundBase;
 class AGuardCharacter;
 
+// Different types of tutorial steps , each one has its own completion check in Tick
 UENUM(BlueprintType)
 enum class ETutorialStepType : uint8
 {
@@ -55,7 +56,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Tutorial")
 		void CompleteCurrentStep();
 
+	// Overriden so caught player teleports back to checkpoint instead of ending the game
 	virtual void OnPlayerCaught() override;
+	// Overriden so we can complete the grab item step when player picks up item 
 	virtual void OnItemCollected() override;
 
 	UFUNCTION(BlueprintCallable, Category = "Tutorial")
@@ -67,15 +70,18 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "Tutorial")
 		TSubclassOf<UTutorialWidget> TutorialWidgetClass;
 
+	// How long player must hide from guard before escape step is considered complete
 	UPROPERTY(EditDefaultsOnly, Category = "Tutorial")
 		float HideDurationRequired = 2.0f;
 
+	// How long the success message stays on screen before advancing to next step
 	UPROPERTY(EditDefaultsOnly, Category = "Tutorial")
 		float SuccessMessageDuration = 1.5f;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Tutorial")
 		float CaughtMessageDuration = 2.0f;
 
+	// Time before escape step auto completes if no guard ever started chasing 
 	UPROPERTY(EditDefaultsOnly, Category = "Tutorial")
 		float EscapeGuardGracePeriod = 5.0f;
 
@@ -97,14 +103,14 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "Tutorial")
 		USoundBase* CaughtSound = nullptr;
 
-	/* Step index at which guards are activated. Before this step the guards
-	   are frozen in place. Set this to the first step that involves the
-	   guard (usually step 5 - the guard warning step).
+	/* Step index at which guards are activated . Before this step the guards are frozen in place .
+	   Set this to the first step that involves the guard (usually step 5 - the guard warning step).
 	*/
 	UPROPERTY(EditDefaultsOnly, Category = "Tutorial")
 		int32 GuardActivationStep = 5;
 
 private:
+	// Tutorial state tracking variables
 	int32 CurrentStepIndex = 0;
 	FTransform LastCheckpointTransform;
 	bool bIsBeingChased = false;
@@ -114,8 +120,8 @@ private:
 	bool bHasShownSpottedMessage = false;
 	bool bGuardChaseActive = false;
 
-	// True when guards have been activated. Used so we only activate them
-	// once and don't keep re-enabling every frame.
+	// True when guards have been activated . Used so we only activate them once and donot keep
+	// re-enabling them every frame in Tick
 	bool bGuardsActivated = false;
 
 	FTimerHandle StepAdvanceTimerHandle;
@@ -140,17 +146,20 @@ private:
 	bool IsAnyGuardChasing() const;
 	void OnEnterStep();
 
-	// Disables all player movement input. Called during messages/transitions.
+	// Disables all player movement input , called during messages and transitions
 	void FreezePlayer();
 
-	// Re-enables player movement input.
+	// Re-enables player movement input
 	void UnfreezePlayer();
 
-	// Freezes all guards (sets MaxWalkSpeed to 0 and stops their movement).
-	// Called at BeginPlay and during interstitial messages.
+	/* Freezes all guards by setting MaxWalkSpeed to 0 and stoping thier movement.
+	   Called at BeginPlay and during interstitial messages so guards donot move
+	   while player is reading the messages.
+	*/
 	void FreezeGuards();
 
-	// Unfreezes guards and sets them up for patrol. Called when the player
-	// reaches GuardActivationStep for the first time.
+	/* Unfreezes guards and sets them up for patrol. Called when the player reaches
+	   GuardActivationStep for the first time so guards start patroling at step 5.
+	*/
 	void ActivateGuards();
 };
