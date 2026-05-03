@@ -271,29 +271,31 @@ void ATutorialGameMode::ActivateGuards()
 
 }
 
-// Disables the player's input so they cant move or do anything during messages. 
+/* Freeze/Unfreeze are intentionally no-ops .
+
+   We used to call PC->DisableInput(PC) here so the player couldnot move durring
+   the 1.5s "Nice job!" messages and the caught message , but DisableInput pops
+   the controller's input component off the input stack which also kills the
+   Escape key binding -- so ESC stoped working in the tutorial.
+
+   We tried switching to a pawn-level DisableInput plus a soft movement gate
+   on the controller , but the pawn's input wasnt cleanly restoring after
+   EnableInput so the character was getting stuck unable to move at all .
+
+   The simplest reliable fix is to just not freeze the player . Steps still
+   complete correctly because step detection runs in Tick , and the only
+   tradeoff is the player can keep walking durring the brief success / caught
+   messages -- which is fine and much better than the player not being able
+   to move at all.
+*/
 void ATutorialGameMode::FreezePlayer()
 {
-	APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0);
-	if (!PC) return;
-
-	PC->DisableInput(PC);
-
-	// Also stoping movement immediatly so the character doesnot slide
-	ACharacter* PlayerChar = Cast<ACharacter>(PC->GetPawn());
-	if (PlayerChar && PlayerChar->GetCharacterMovement())
-	{
-		PlayerChar->GetCharacterMovement()->StopMovementImmediately();
-	}
+	// Intentionally empty -- see comment above
 }
 
-// Re-enables the player's input so they can move again.
 void ATutorialGameMode::UnfreezePlayer()
 {
-	APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0);
-	if (!PC) return;
-
-	PC->EnableInput(PC);
+	// Intentionally empty -- see comment above
 }
 
 /* Checks if any guard in the level is currently chasing the player . We do this by

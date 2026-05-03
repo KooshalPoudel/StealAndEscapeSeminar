@@ -34,6 +34,7 @@ Description: StealAndEscapePlayerController is the player controller class which
 #include "StealAndEscapeCharacter.h"
 #include "Kismet/GameplayStatics.h"
 #include "Engine/World.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 // [Epic Games Template] Default constructor from the topdown template 
 AStealAndEscapePlayerController::AStealAndEscapePlayerController()
@@ -64,13 +65,15 @@ void AStealAndEscapePlayerController::BeginPlay()
 	DefaultMouseCursor = EMouseCursor::Crosshairs;
 }
 
-// [Epic Games Template] PlayerTick from the topdown template , kept as it is
+// [Epic Games Template + Custom gate] PlayerTick from the topdown template ,
+// gated on bMovementInputEnabled so the tutorial can freeze movement without
+// killing the controller's Escape binding.
 void AStealAndEscapePlayerController::PlayerTick(float DeltaTime)
 {
 	Super::PlayerTick(DeltaTime);
 
 	// keep updating the destination every tick while desired
-	if (bMoveToMouseCursor)
+	if (bMoveToMouseCursor && bMovementInputEnabled)
 	{
 		MoveToMouseCursor();
 	}
@@ -169,9 +172,15 @@ void AStealAndEscapePlayerController::SetNewMoveDestination(const FVector DestLo
 	}
 }
 
-// [Epic Games Template] OnSetDestinationPressed from topdown template , kept as it is
+// [Epic Games Template + Custom gate] OnSetDestinationPressed from topdown template,
+// gated on bMovementInputEnabled so clicks are ignored while the tutorial has
+// movement frozen.
 void AStealAndEscapePlayerController::OnSetDestinationPressed()
 {
+	if (!bMovementInputEnabled)
+	{
+		return;
+	}
 	// set flag to keep updating destination until released
 	bMoveToMouseCursor = true;
 }
@@ -264,4 +273,32 @@ void AStealAndEscapePlayerController::ClosePauseMenu()
 	InputMode.SetHideCursorDuringCapture(false);
 	SetInputMode(InputMode);
 	bShowMouseCursor = true;
+}
+
+/* [Custom Added by Kushal] SetMovementInputEnabled is the soft-disable used by the
+   tutorial . When set to false , click-to-move is gated off in OnSetDestinationPressed
+   and PlayerTick , and any in-progress nav move is canceled so the player doesnot
+   keep walking to a destination that was queued before freeze . Crucially we do NOT
+   call DisableInput here -- doing that would also kill the Escape key binding for
+   the pause menu , which is the bug this whole flag was added to fix.
+*/
+void AStealAndEscapePlayerController::SetMovementInputEnabled(bool bEnabled)
+{
+	bMovementInputEnabled = bEnabled;
+
+	if (!bEnabled)
+	{
+		// Drop the click-to-move polling flag so the next tick stops chasing cursor
+		bMoveToMouseCursor = false;
+
+		// Cancel any in-progress nav move so the character doesnot slide to a
+		// previously queued destination
+		if (APawn* MyPawn = GetPawn())
+		{
+			if (UCharacterMovementComponent* CharMove = Cast<UCharacterMovementComponent>(MyPawn->GetMovementComponent()))
+			{
+				CharMove->StopMovementImmediately();
+			}
+		}
+	}
 }

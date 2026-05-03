@@ -38,6 +38,15 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Pause")
 		void ClosePauseMenu();
 
+	/* [Custom Added by Kushal] Gate for movement input (click-to-move) without disabling the
+	   whole input component. The tutorial uses this to freeze the player durring step
+	   messages while keeping the Escape key binding alive for the pause menu . If we used
+	   DisableInput on the controller instead , it would strip the Escape binding off the
+	   input stack and ESC would silently do nothing in the tutorial.
+	*/
+	UFUNCTION(BlueprintCallable, Category = "Input")
+		void SetMovementInputEnabled(bool bEnabled);
+
 	/* [Custom Added by Kushal] Widget Blueprint class for the pause menu . Set this on the
 	   BP_StealAndEscapePlayerController defaults to WBP_PauseMenu . If left null Escape
 	   key will do nothing.
@@ -88,6 +97,12 @@ protected:
 	void TogglePauseMenu();
 
 private:
+	/* [Custom Added by Kushal] When false , click-to-move is gated off in the input
+	   handlers and PlayerTick . Defaults to true . Toggled by SetMovementInputEnabled.
+	   This is separate from DisableInput because we want movement off but ESC on.
+	*/
+	bool bMovementInputEnabled = true;
+
 	/* [Custom Added by Kushal] Keeping a pointer to the spawned pause menu so that it can be
 	   removed on resume and also so it is not garbage collected while the game is paused.
 	   This is null when the menu is not shown.
